@@ -29,9 +29,9 @@ func StrIsInt(data string) bool {
 	match, _ := regexp.MatchString("^([0-9]+)$", data)
 	if match {
 		return true
-	} else {
-		return false
 	}
+	return false
+
 }
 func createHash(key string) string {
 	hasher := md5.New()
