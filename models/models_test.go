@@ -13,22 +13,23 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with ezBastion.  If not, see <https://www.gnu.org/licenses/>.
 
-package routes
+package models
 
 import (
-	"github.com/ezbastion/ezb_vault/ctrl"
-
-	"github.com/gin-gonic/gin"
+	"testing"
 )
 
-func Routes(route *gin.Engine) {
-
-	KV := route.Group("")
-	{
-		KV.GET("/", ctrl.GetAll)
-		KV.GET("/:name", ctrl.GetVal)
-		KV.POST("/", ctrl.AddVal)
-		KV.PUT("/:name", ctrl.UpdateVal)
-		KV.DELETE("/:name", ctrl.DeleteVal)
+func TestAES(t *testing.T) {
+	Raws := []KeyVal{
+		{ID: 0, U: "user0", K: "key0", V: "098f6bcd4621d373cade4e832627b4f6"},
+		{ID: 1, U: "user1", K: "key1", V: " "},
+		{ID: 2, U: "user2", K: "key2", V: "@</;%^?_-☻.♥"},
+	}
+	for _, Raw := range Raws {
+		r := Raw.Encrypt("d4621d373cad")
+		o := r.Decrypt("d4621d373cad")
+		if o.V != Raw.V {
+			t.Errorf("TestAES was incorrect, got: <%s>, want: <%s>.", o.V, Raw.V)
+		}
 	}
 }

@@ -19,10 +19,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"ezb_vault/Middleware"
-	"ezb_vault/configuration"
-	"ezb_vault/routes"
-	"ezb_vault/setup"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -32,6 +28,11 @@ import (
 	"path"
 	"path/filepath"
 	"time"
+
+	"github.com/ezbastion/ezb_vault/Middleware"
+	"github.com/ezbastion/ezb_vault/configuration"
+	"github.com/ezbastion/ezb_vault/routes"
+	"github.com/ezbastion/ezb_vault/setup"
 
 	log "github.com/sirupsen/logrus"
 

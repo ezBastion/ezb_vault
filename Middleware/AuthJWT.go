@@ -13,7 +13,6 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with ezBastion.  If not, see <https://www.gnu.org/licenses/>.
 
-
 package Middleware
 
 import (
@@ -21,9 +20,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"ezb_vault/configuration"
 	"fmt"
 	"io/ioutil"
+
+	"github.com/ezbastion/ezb_vault/configuration"
 
 	"net/http"
 	"os"

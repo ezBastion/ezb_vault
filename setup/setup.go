@@ -17,12 +17,13 @@ package setup
 
 import (
 	"encoding/json"
-	"ezb_vault/configuration"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/ezbastion/ezb_vault/configuration"
 )
 
 var exPath string

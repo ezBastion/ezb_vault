@@ -13,13 +13,13 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with ezBastion.  If not, see <https://www.gnu.org/licenses/>.
 
-
 package ctrl
 
 import (
-	"ezb_vault/models"
 	"fmt"
 	"net/http"
+
+	"github.com/ezbastion/ezb_vault/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

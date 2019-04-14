@@ -13,14 +13,13 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with ezBastion.  If not, see <https://www.gnu.org/licenses/>.
 
-
 package configuration
 
 import (
 	"fmt"
 	"path"
 
-	m "ezb_vault/models"
+	m "github.com/ezbastion/ezb_vault/models"
 
 	"github.com/jinzhu/gorm"
 )
