@@ -84,13 +84,13 @@ func CheckFolder(isIntSess bool) {
 func Setup(isIntSess bool) error {
 
 	_fqdn := fqdn.Get()
-	quiet := false
+	quiet := true
 	confFile := path.Join(exPath, "conf/config.json")
 	hostname, _ := os.Hostname()
 	CheckFolder(isIntSess)
 	conf, err := CheckConfig(isIntSess)
 	if err != nil {
-		quiet = true
+		quiet = false
 		conf.Listen = ":5100"
 		conf.ServiceFullName = "Easy Bastion Vault"
 		conf.ServiceName = "ezb_vault"
@@ -121,14 +121,14 @@ func Setup(isIntSess bool) error {
 	}
 
 	if quiet == false {
-		fmt.Print("\n\n")
-		fmt.Println("***********")
-		fmt.Println("*** PKI ***")
-		fmt.Println("***********")
-		fmt.Println("ezBastion nodes use elliptic curve digital signature algorithm ")
-		fmt.Println("(ECDSA) to communicate.")
-		fmt.Println("We need ezb_pki address and port, to request certificat pair.")
-		fmt.Println("ex: 10.20.1.2:6000 pki.domain.local:6000")
+		log.Info("\n\n")
+		log.Info("***********")
+		log.Info("*** PKI ***")
+		log.Info("***********")
+		log.Info("ezBastion nodes use elliptic curve digital signature algorithm ")
+		log.Info("(ECDSA) to communicate.")
+		log.Info("We need ezb_pki address and port, to request certificat pair.")
+		log.Info("ex: 10.20.1.2:6000 pki.domain.local:6000")
 
 		for {
 			p := ez_stdio.AskForValue("ezb_pki", conf.EzbPki, `^[a-zA-Z0-9-\.]+:[0-9]{4,5}$`)
@@ -140,14 +140,14 @@ func Setup(isIntSess bool) error {
 				} else {
 					conn.Close()
 					conf.EzbPki = p
-					log.Debug(fmt.Sprintf("EZB_PKI set tp %s", p))
+					log.Debug(fmt.Sprintf("EZB_PKI set to %s", p))
 					break
 				}
 			}
 		}
 
 		log.Info("Certificat Subject Alternative Name.")
-		log.Info(fmt.Sprintf("\nBy default using: <%s, %s> as SAN. Add more ?\n", _fqdn, hostname))
+		log.Info(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
 		for {
 			tmp := conf.SAN
 
@@ -158,12 +158,11 @@ func Setup(isIntSess bool) error {
 			c := ez_stdio.AskForConfirmation(fmt.Sprintf("SAN list %s ok?", tmp))
 			if c {
 				conf.SAN = tmp
-				log.Debug(fmt.Sprintf("EZB_SAN set tp %s", tmp))
+				log.Debug(fmt.Sprintf("EZB_SAN set to %s", tmp))
 				break
 			}
 		}
 
-	} else {
 		c, _ := json.Marshal(conf)
 		ioutil.WriteFile(confFile, c, 0600)
 		log.Println(confFile, " saved.")
