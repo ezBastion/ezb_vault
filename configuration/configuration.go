@@ -25,7 +25,8 @@ type Configuration struct {
 	ServiceName     string `json:"servicename"`
 	ServiceFullName string `json:"servicefullname"`
 	LogLevel        string `json:"loglevel"`
-
+	EzbPki          string `json:"ezb_pki"`
+	SAN             []string `json:"san"`
 }
 
 
