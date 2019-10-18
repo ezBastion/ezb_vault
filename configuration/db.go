@@ -22,6 +22,7 @@ import (
 	m "github.com/ezbastion/ezb_vault/models"
 
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 func InitDB(conf Configuration, exPath string) (*gorm.DB, error) {

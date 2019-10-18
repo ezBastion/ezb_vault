@@ -20,7 +20,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io"
+//	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -29,79 +29,96 @@ import (
 	"path/filepath"
 	"time"
 
+	ezbevent "github.com/ezbastion/ezb_lib/eventlogmanager"
 	"github.com/ezbastion/ezb_vault/Middleware"
 	"github.com/ezbastion/ezb_vault/configuration"
 	"github.com/ezbastion/ezb_vault/routes"
 	"github.com/ezbastion/ezb_vault/setup"
-
-	log "github.com/sirupsen/logrus"
-
 	"github.com/gin-gonic/contrib/ginrus"
 	"github.com/gin-gonic/gin"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/windows/svc"
+	"golang.org/x/sys/windows/svc/debug"
+
 )
 
-func mainGin(serverchan *chan bool) {
+var defaultconflisten string
+var err error
+
+type myservice struct{}
+
+func (m *myservice) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
+	log.Debugln("#### EXECUTE started #####")
+	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown
+	changes <- svc.Status{State: svc.StartPending}
+	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
+	serverchan := make(chan bool)
+	go MainGin(&serverchan)
+loop:
+	for {
+		select {
+		case c := <-r:
+			switch c.Cmd {
+			case svc.Interrogate:
+				changes <- c.CurrentStatus
+				time.Sleep(100 * time.Millisecond)
+				changes <- c.CurrentStatus
+			case svc.Stop, svc.Shutdown:
+				close(serverchan)
+				break loop
+			default:
+				log.Errorln(fmt.Sprintf("unexpected control request #%d", c))
+			}
+		}
+	}
+	changes <- svc.Status{State: svc.StopPending}
+	return
+}
+
+// RunService runs the service targeted by name. From 06/27/2019, debug is not needed as the debug is always done, log system will
+// handle th level
+func RunService(name string) {
+
+	defer ezbevent.Close()
+	run := debug.Run
+
+	ezbevent.Info(fmt.Sprintf("starting the %s service", name))
+	err = run(name, &myservice{})
+	if err != nil {
+		ezbevent.Error(fmt.Sprintf("%s service failed: %s", name, err.Error()))
+		return
+	}
+	ezbevent.Info(fmt.Sprintf("%s service stopped", name))
+}
+
+// MainGin starts the server
+func MainGin(serverchan *chan bool) {
 	ex, _ := os.Executable()
 	exPath := filepath.Dir(ex)
 	conf, err := setup.CheckConfig(true)
 	if err != nil {
 		panic(err)
 	}
-	/* log */
-	outlog := true
-	gin.DisableConsoleColor()
-	log.SetFormatter(&log.JSONFormatter{})
-	switch conf.LogLevel {
-	case "debug":
-		log.SetLevel(log.DebugLevel)
-		break
-	case "info":
-		log.SetLevel(log.InfoLevel)
-		break
-	case "warning":
-		log.SetLevel(log.WarnLevel)
-		break
-	case "error":
-		log.SetLevel(log.ErrorLevel)
-		break
-	case "critical":
-		log.SetLevel(log.FatalLevel)
-		break
-	default:
-		outlog = false
-	}
-	if outlog {
-		if _, err := os.Stat(path.Join(exPath, "log")); os.IsNotExist(err) {
-			err = os.MkdirAll(path.Join(exPath, "log"), 0600)
-			if err != nil {
-				log.Println(err)
-			}
+
+	// Backup logs
+	log.Debugln("Backup log process")
+	if _, err := os.Stat(path.Join(exPath, "log")); os.IsNotExist(err) {
+		err = os.MkdirAll(path.Join(exPath, "log"), 0600)
+		if err != nil {
+			log.Errorln(err)
 		}
-		t := time.Now().UTC()
-		l := fmt.Sprintf("log/ezb_vault-%d%d.log", t.Year(), t.YearDay())
-		f, _ := os.OpenFile(path.Join(exPath, l), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		defer f.Close()
-		log.SetOutput(io.MultiWriter(f))
-		ti := time.NewTicker(1 * time.Minute)
-		defer ti.Stop()
-		go func() {
-			for range ti.C {
-				t := time.Now().UTC()
-				l := fmt.Sprintf("log/ezb_vault-%d%d.log", t.Year(), t.YearDay())
-				f, _ := os.OpenFile(path.Join(exPath, l), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-				defer f.Close()
-				log.SetOutput(io.MultiWriter(f))
-			}
-		}()
 	}
-	/* log */
+
+	ti := time.NewTicker(1 * time.Minute)
+	defer ti.Stop()
 
 	db, err := configuration.InitDB(conf, exPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(fmt.Sprintf("Error during InitDB Configuration : %s", err.Error()))
 		panic(err)
 	}
+
+	// Init of the GIN Web HTTP framework
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(ginrus.Ginrus(log.StandardLogger(), time.RFC3339, true))
@@ -115,12 +132,13 @@ func mainGin(serverchan *chan bool) {
 
 	caCert, err := ioutil.ReadFile(path.Join(exPath, conf.CaCert))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(fmt.Sprintf("Error reading CaCert : %s", err.Error()))
 	}
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
 	if conf.Listen == "" {
-		conf.Listen = "localhost:5100"
+		log.Debugln(fmt.Sprintf("No listen port defined in conf file, settings default : %s", defaultconflisten))
+		conf.Listen = defaultconflisten
 	}
 	tlsConfig := &tls.Config{}
 	server := &http.Server{
@@ -129,19 +147,21 @@ func mainGin(serverchan *chan bool) {
 		Handler:   r,
 	}
 
+	log.Infoln("Server EZB_VAULT started")
 	go func() {
 		if err := server.ListenAndServeTLS(path.Join(exPath, conf.PublicCert), path.Join(exPath, conf.PrivateKey)); err != nil {
-			log.Info("listen: %s\n", err)
+			log.Infoln(fmt.Sprintf("listen: %s", err))
 		}
 	}()
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
-	log.Info("Shutdown Server ...")
+
+	log.Infoln("Shutdown Server ...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err = server.Shutdown(ctx); err != nil {
-		log.Fatal("Server Shutdown:", err)
+		log.Fatalln(fmt.Sprintf("Reero during Server Shutdown : %s", err.Error()))
 	}
-	log.Info("Server exiting")
+	log.Infoln("Server exiting")
 }
