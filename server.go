@@ -77,10 +77,14 @@ loop:
 
 // RunService runs the service targeted by name. From 06/27/2019, debug is not needed as the debug is always done, log system will
 // handle th level
-func RunService(name string) {
+func RunService(name string, isdebug bool) {
 
 	defer ezbevent.Close()
-	run := debug.Run
+
+	run := svc.Run
+	if isdebug {
+		run = debug.Run
+	}
 
 	ezbevent.Info(fmt.Sprintf("starting the %s service", name))
 	err = run(name, &myservice{})
