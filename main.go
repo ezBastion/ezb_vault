@@ -23,6 +23,7 @@ import (
 	"github.com/ezbastion/ezb_lib/logmanager"
 	"github.com/ezbastion/ezb_lib/servicemanager"
 	"github.com/ezbastion/ezb_vault/setup"
+	"github.com/ezbastion/ezb_vault/configuration"
 
 	log "github.com/sirupsen/logrus"
 	ezbevent "github.com/ezbastion/ezb_lib/eventlogmanager"
@@ -32,25 +33,33 @@ import (
 )
 
 var logPath string
+var conf configuration.Configuration
 
 func init() {
 	exe, _ := os.Executable()
 	// logpath is not the same with a debug (exe folder) or service (%windor%\system32)
 	logPath = filepath.Dir(exe)
-
 	logmanager.SetLogLevel("debug", logPath, "ezb_vault.log", 1024, 5, 10)
+
+	isIntSess, err := svc.IsAnInteractiveSession()
+	if err != nil {
+		log.Fatalf("failed to determine if we are running in an interactive session: %v", err)
+	}
+	if !isIntSess {
+		// if not in session, set a default log folder
+		log.Infoln("EZB_VAULT started by system command")
+	}
+
 	defaultconflisten = "localhost:5100"
 	ezbevent.Open("ezb_vault")
 }
 
 func main() {
+	isIntSess, _ := svc.IsAnInteractiveSession()
+	log.Debugln("EZB_VAULT, entering in main process")
 
-	 log.Debugln("EZB_VAULT, entering in main process")
-	 isIntSess, err := svc.IsAnInteractiveSession()
-	 if err != nil {
-	 	log.Fatalf("failed to determine if we are running in an interactive session: %v", err)
-	 }
-	 if !isIntSess {
+	if !isIntSess {
+		// if not in session, it is a start request
 		conf, err := setup.CheckConfig(false)
 		if err == nil {
 			log.Debugln(fmt.Sprintf("Service %s request to start ...",conf.ServiceName))
@@ -59,6 +68,7 @@ func main() {
 		return
 	}
 
+	// from here, we are in session, handle the commands
 	app := cli.NewApp()
 	app.Name = "ezb_vault"
 	app.Version = "0.1.0-rc1"
