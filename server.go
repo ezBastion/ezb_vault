@@ -28,7 +28,9 @@ import (
 	"path"
 	"path/filepath"
 	"time"
-
+	log "github.com/sirupsen/logrus"
+	
+	"github.com/ezbastion/ezb_lib/logmanager"
 	ezbevent "github.com/ezbastion/ezb_lib/eventlogmanager"
 	"github.com/ezbastion/ezb_vault/Middleware"
 	"github.com/ezbastion/ezb_vault/configuration"
@@ -36,7 +38,7 @@ import (
 	"github.com/ezbastion/ezb_vault/setup"
 	"github.com/gin-gonic/contrib/ginrus"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
 
@@ -48,7 +50,7 @@ var err error
 type myservice struct{}
 
 func (m *myservice) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
-	log.Debugln("#### EXECUTE started #####")
+	logmanager.Debug("#### EXECUTE started #####")
 	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown
 	changes <- svc.Status{State: svc.StartPending}
 	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
@@ -67,7 +69,7 @@ loop:
 				close(serverchan)
 				break loop
 			default:
-				log.Errorln(fmt.Sprintf("unexpected control request #%d", c))
+				logmanager.Error(fmt.Sprintf("unexpected control request #%d", c))
 			}
 		}
 	}
@@ -86,13 +88,13 @@ func RunService(name string, isdebug bool) {
 		run = debug.Run
 	}
 
-	ezbevent.Info(fmt.Sprintf("starting the %s service", name))
+	logmanager.Info(fmt.Sprintf("starting the %s service", name))
 	err = run(name, &myservice{})
 	if err != nil {
-		ezbevent.Error(fmt.Sprintf("%s service failed: %s", name, err.Error()))
+		logmanager.Error(fmt.Sprintf("%s service failed: %s", name, err.Error()))
 		return
 	}
-	ezbevent.Info(fmt.Sprintf("%s service stopped", name))
+	logmanager.Info(fmt.Sprintf("%s service stopped", name))
 }
 
 // MainGin starts the server
@@ -105,11 +107,11 @@ func MainGin(serverchan *chan bool) {
 	}
 
 	// Backup logs
-	log.Debugln("Backup log process")
 	if _, err := os.Stat(path.Join(exPath, "log")); os.IsNotExist(err) {
+		logmanager.Debug("Log path creation process")
 		err = os.MkdirAll(path.Join(exPath, "log"), 0600)
 		if err != nil {
-			log.Errorln(err)
+			logmanager.Error(fmt.Sprintf("Error during log path creation : %s",err.Error))
 		}
 	}
 
@@ -118,7 +120,7 @@ func MainGin(serverchan *chan bool) {
 
 	db, err := configuration.InitDB(conf, exPath)
 	if err != nil {
-		log.Fatalln(fmt.Sprintf("Error during InitDB Configuration : %s", err.Error()))
+		logmanager.Fatal(fmt.Sprintf("Error during InitDB Configuration : %s", err.Error()))
 		panic(err)
 	}
 
@@ -136,12 +138,12 @@ func MainGin(serverchan *chan bool) {
 
 	caCert, err := ioutil.ReadFile(path.Join(exPath, conf.CaCert))
 	if err != nil {
-		log.Fatalln(fmt.Sprintf("Error reading CaCert : %s", err.Error()))
+		logmanager.Fatal(fmt.Sprintf("Error reading CaCert : %s", err.Error()))
 	}
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
 	if conf.Listen == "" {
-		log.Debugln(fmt.Sprintf("No listen port defined in conf file, settings default : %s", defaultconflisten))
+		logmanager.Debug(fmt.Sprintf("No listen port defined in conf file, settings default : %s", defaultconflisten))
 		conf.Listen = defaultconflisten
 	}
 	tlsConfig := &tls.Config{}
@@ -151,21 +153,21 @@ func MainGin(serverchan *chan bool) {
 		Handler:   r,
 	}
 
-	log.Infoln("Server EZB_VAULT started")
+	logmanager.Info("Server EZB_VAULT started")
 	go func() {
 		if err := server.ListenAndServeTLS(path.Join(exPath, conf.PublicCert), path.Join(exPath, conf.PrivateKey)); err != nil {
-			log.Infoln(fmt.Sprintf("listen: %s", err))
+			logmanager.Info(fmt.Sprintf("listen: %s", err))
 		}
 	}()
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
 
-	log.Infoln("Shutdown Server ...")
+	logmanager.Info("Shutdown Server ...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err = server.Shutdown(ctx); err != nil {
-		log.Fatalln(fmt.Sprintf("Reero during Server Shutdown : %s", err.Error()))
+		logmanager.Fatal(fmt.Sprintf("Reero during Server Shutdown : %s", err.Error()))
 	}
-	log.Infoln("Server exiting")
+	logmanager.Info("Server exiting")
 }

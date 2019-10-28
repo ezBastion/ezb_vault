@@ -24,12 +24,12 @@ import (
 	"path"
 	"path/filepath"
 	"github.com/ezbastion/ezb_lib/certmanager"
+	"github.com/ezbastion/ezb_lib/logmanager"
 	"github.com/ezbastion/ezb_vault/configuration"
 	"github.com/ezbastion/ezb_lib/ez_stdio"
 	"strings"
 
 	fqdn "github.com/ShowMax/go-fqdn"
-	log "github.com/sirupsen/logrus"
 )
 
 var exPath string
@@ -56,33 +56,34 @@ func CheckFolder(isIntSess bool) {
 		if err != nil {
 			return
 		}
-		log.Println("Make cert folder.")
+		logmanager.Info("Make cert folder.")
 	}
 	if _, err := os.Stat(path.Join(exPath, "log")); os.IsNotExist(err) {
 		err = os.MkdirAll(path.Join(exPath, "log"), 0600)
 		if err != nil {
 			return
 		}
-		log.Println("Make log folder.")
+		logmanager.Info("Make log folder.")
 	}
 	if _, err := os.Stat(path.Join(exPath, "conf")); os.IsNotExist(err) {
 		err = os.MkdirAll(path.Join(exPath, "conf"), 0600)
 		if err != nil {
 			return
 		}
-		log.Println("Make conf folder.")
+		logmanager.Info("Make conf folder.")
 	}
 	if _, err := os.Stat(path.Join(exPath, "db")); os.IsNotExist(err) {
 		err = os.MkdirAll(path.Join(exPath, "db"), 0600)
 		if err != nil {
 			return
 		}
-		log.Println("Make db folder.")
+		logmanager.Info("Make db folder.")
 	}
 }
 
 func Setup(isIntSess bool) error {
 
+	logmanager.Debug("Entering in setup process")
 	_fqdn := fqdn.Get()
 	quiet := true
 	confFile := path.Join(exPath, "conf/config.json")
@@ -104,31 +105,31 @@ func Setup(isIntSess bool) error {
 	}
 
 	_, fica := os.Stat(path.Join(exPath, conf.CaCert))
-	log.Debug(fmt.Sprintf("Cacert sets to %s", fica))
+	logmanager.Debug(fmt.Sprintf("Cacert sets to %s", fica))
 	_, fipriv := os.Stat(path.Join(exPath, conf.PrivateKey))
-	log.Debug(fmt.Sprintf("Privatekey sets to %s", fipriv))
+	logmanager.Debug(fmt.Sprintf("Privatekey sets to %s", fipriv))
 	_, fipub := os.Stat(path.Join(exPath, conf.PublicCert))
-	log.Debug(fmt.Sprintf("PublicCert sets to %s", fipub))
+	logmanager.Debug(fmt.Sprintf("PublicCert sets to %s", fipub))
 
 	if os.IsNotExist(fica) || os.IsNotExist(fipriv) || os.IsNotExist(fipub) {
-		log.Debug("Setting the certificate")
+		logmanager.Debug("Setting the certificate")
 		keyFile := path.Join(exPath, conf.PrivateKey)
 		certFile := path.Join(exPath, conf.PublicCert)
 		caFile := path.Join(exPath, conf.CaCert)
 		request := certmanager.NewCertificateRequest(conf.ServiceName, 730, conf.SAN)
 		certmanager.Generate(request, conf.EzbPki, certFile, keyFile, caFile)
-		log.Debug("Certificate generated")
+		logmanager.Debug("Certificate generated")
 	}
 
 	if quiet == false {
-		log.Info("\n\n")
-		log.Info("***********")
-		log.Info("*** PKI ***")
-		log.Info("***********")
-		log.Info("ezBastion nodes use elliptic curve digital signature algorithm ")
-		log.Info("(ECDSA) to communicate.")
-		log.Info("We need ezb_pki address and port, to request certificat pair.")
-		log.Info("ex: 10.20.1.2:6000 pki.domain.local:6000")
+		logmanager.Info("\n\n")
+		logmanager.Info("***********")
+		logmanager.Info("*** PKI ***")
+		logmanager.Info("***********")
+		logmanager.Info("ezBastion nodes use elliptic curve digital signature algorithm ")
+		logmanager.Info("(ECDSA) to communicate.")
+		logmanager.Info("We need ezb_pki address and port, to request certificat pair.")
+		logmanager.Info("ex: 10.20.1.2:6000 pki.domain.local:6000")
 
 		for {
 			p := ez_stdio.AskForValue("ezb_pki", conf.EzbPki, `^[a-zA-Z0-9-\.]+:[0-9]{4,5}$`)
@@ -136,18 +137,18 @@ func Setup(isIntSess bool) error {
 			if c {
 				conn, err := net.Dial("tcp", p)
 				if err != nil {
-					log.Error(fmt.Sprintf("## Failed to connect to %s ##\n", p))
+					logmanager.Error(fmt.Sprintf("## Failed to connect to %s ##\n", p))
 				} else {
 					conn.Close()
 					conf.EzbPki = p
-					log.Debug(fmt.Sprintf("EZB_PKI set to %s", p))
+					logmanager.Debug(fmt.Sprintf("EZB_PKI set to %s", p))
 					break
 				}
 			}
 		}
 
-		log.Info("Certificat Subject Alternative Name.")
-		log.Info(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
+		logmanager.Info("Certificat Subject Alternative Name.")
+		logmanager.Info(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
 		for {
 			tmp := conf.SAN
 
@@ -158,14 +159,14 @@ func Setup(isIntSess bool) error {
 			c := ez_stdio.AskForConfirmation(fmt.Sprintf("SAN list %s ok?", tmp))
 			if c {
 				conf.SAN = tmp
-				log.Debug(fmt.Sprintf("EZB_SAN set to %s", tmp))
+				logmanager.Debug(fmt.Sprintf("EZB_SAN set to %s", tmp))
 				break
 			}
 		}
 
 		c, _ := json.Marshal(conf)
 		ioutil.WriteFile(confFile, c, 0600)
-		log.Println(confFile, " saved.")
+		logmanager.Info(fmt.Sprintf("%s saved",confFile))
 	}
 
 	return nil
