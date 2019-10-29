@@ -29,7 +29,7 @@ import (
 	"path/filepath"
 	"time"
 	log "github.com/sirupsen/logrus"
-	
+
 	"github.com/ezbastion/ezb_lib/logmanager"
 	ezbevent "github.com/ezbastion/ezb_lib/eventlogmanager"
 	"github.com/ezbastion/ezb_vault/Middleware"
@@ -156,7 +156,7 @@ func MainGin(serverchan *chan bool) {
 	logmanager.Info("Server EZB_VAULT started")
 	go func() {
 		if err := server.ListenAndServeTLS(path.Join(exPath, conf.PublicCert), path.Join(exPath, conf.PrivateKey)); err != nil {
-			logmanager.Info(fmt.Sprintf("listen: %s", err))
+			logmanager.Error(fmt.Sprintf("listen: %s", err))
 		}
 	}()
 	quit := make(chan os.Signal)

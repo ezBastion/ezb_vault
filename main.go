@@ -40,7 +40,7 @@ func init() {
 	exe, _ := os.Executable()
 	// logpath is not the same with a debug (exe folder) or service (%windor%\system32)
 	logPath = filepath.Dir(exe)+string(os.PathSeparator)+"log"
-
+	// TODO, set the loglevel as described in the conf file
 	logmanager.SetLogLevel("debug", logPath, "ezb_vault.log", 1024, 5, 10, isIntSess)
 
 	isIntSess, err := svc.IsAnInteractiveSession()
