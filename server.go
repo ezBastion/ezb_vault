@@ -18,10 +18,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-//	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,7 +26,6 @@ import (
 	"path/filepath"
 	"time"
 	log "github.com/sirupsen/logrus"
-
 	"github.com/ezbastion/ezb_lib/logmanager"
 	ezbevent "github.com/ezbastion/ezb_lib/eventlogmanager"
 	"github.com/ezbastion/ezb_vault/Middleware"
@@ -38,7 +34,6 @@ import (
 	"github.com/ezbastion/ezb_vault/setup"
 	"github.com/gin-gonic/contrib/ginrus"
 	"github.com/gin-gonic/gin"
-
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
 
@@ -136,17 +131,8 @@ func MainGin(serverchan *chan bool) {
 	r.Use(Middleware.DBMiddleware(db))
 	routes.Routes(r)
 
-	caCert, err := ioutil.ReadFile(path.Join(exPath, conf.CaCert))
-	if err != nil {
-		logmanager.Fatal(fmt.Sprintf("Error reading CaCert : %s", err.Error()))
-	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
-	if conf.Listen == "" {
-		logmanager.Debug(fmt.Sprintf("No listen port defined in conf file, settings default : %s", defaultconflisten))
-		conf.Listen = defaultconflisten
-	}
 	tlsConfig := &tls.Config{}
+
 	server := &http.Server{
 		Addr:      conf.Listen,
 		TLSConfig: tlsConfig,
@@ -169,5 +155,5 @@ func MainGin(serverchan *chan bool) {
 	if err = server.Shutdown(ctx); err != nil {
 		logmanager.Fatal(fmt.Sprintf("Reero during Server Shutdown : %s", err.Error()))
 	}
-	logmanager.Info("Server exiting")
+	logmanager.Info("Server exited")
 }
