@@ -31,7 +31,6 @@ import (
 	"github.com/ezbastion/ezb_vault/Middleware"
 	"github.com/ezbastion/ezb_vault/configuration"
 	"github.com/ezbastion/ezb_vault/routes"
-	"github.com/ezbastion/ezb_vault/setup"
 	"github.com/gin-gonic/contrib/ginrus"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sys/windows/svc"
@@ -96,7 +95,7 @@ func RunService(name string, isdebug bool) {
 func MainGin(serverchan *chan bool) {
 	ex, _ := os.Executable()
 	exPath := filepath.Dir(ex)
-	conf, err := setup.CheckConfig(true)
+	conf, err := configuration.CheckConfig(true, exPath)
 	if err != nil {
 		panic(err)
 	}

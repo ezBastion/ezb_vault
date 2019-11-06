@@ -39,16 +39,6 @@ func init() {
 	exPath = filepath.Dir(ex)
 }
 
-func CheckConfig(isIntSess bool) (conf configuration.Configuration, err error) {
-	confFile := path.Join(exPath, "conf/config.json")
-	raw, err := ioutil.ReadFile(confFile)
-	if err != nil {
-		return conf, err
-	}
-	json.Unmarshal(raw, &conf)
-	return conf, nil
-}
-
 func CheckFolder(isIntSess bool) {
 
 	if _, err := os.Stat(path.Join(exPath, "cert")); os.IsNotExist(err) {
@@ -89,7 +79,7 @@ func Setup(isIntSess bool) error {
 	confFile := path.Join(exPath, "conf/config.json")
 	hostname, _ := os.Hostname()
 	CheckFolder(isIntSess)
-	conf, err := CheckConfig(isIntSess)
+	conf, err := configuration.CheckConfig(isIntSess, exPath)
 	if err != nil {
 		quiet = false
 		conf.Listen = ":5100"

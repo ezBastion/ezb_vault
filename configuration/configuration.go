@@ -16,6 +16,12 @@
 
 package configuration
 
+import (
+	"encoding/json"
+	"io/ioutil"
+	"path"
+)
+
 type Configuration struct {
 	Listen          string `json:"listen"`
 	PrivateKey      string `json:"privatekey"`
@@ -25,8 +31,19 @@ type Configuration struct {
 	ServiceName     string `json:"servicename"`
 	ServiceFullName string `json:"servicefullname"`
 	LogLevel        string `json:"loglevel"`
+	LogPath			string `json:"default"`
 	EzbPki          string `json:"ezb_pki"`
 	SAN             []string `json:"san"`
 }
 
+
+func CheckConfig(isIntSess bool, exPath string) (conf Configuration, err error) {
+	confFile := path.Join(exPath, "conf/config.json")
+	raw, err := ioutil.ReadFile(confFile)
+	if err != nil {
+		return conf, err
+	}
+	json.Unmarshal(raw, &conf)
+	return conf, nil
+}
 
