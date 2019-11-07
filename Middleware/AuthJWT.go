@@ -90,7 +90,7 @@ func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 		jwtpubkey := path.Join(exPath, "cert", jwtkeyfile)
 
 		if _, err := os.Stat(jwtpubkey); os.IsNotExist(err) {
-			logmanager.Error(fmt.Sprintf("Unable to load sta public certificat: ", err.Error()))
+			logmanager.Error(fmt.Sprintf("Unable to load sta public certificate: ", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0010"))
 			return
 		}

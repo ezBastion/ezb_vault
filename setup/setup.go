@@ -91,6 +91,7 @@ func Setup(isIntSess bool) error {
 		conf.PublicCert = "cert/ezb_vault.crt"
 		conf.DB = "db/ezb_vault.db"
 		conf.EzbPki = "localhost:6000"
+		conf.LogPath = "default"
 		conf.SAN = []string{_fqdn, hostname}
 	}
 
@@ -109,6 +110,33 @@ func Setup(isIntSess bool) error {
 		request := certmanager.NewCertificateRequest(conf.ServiceName, 730, conf.SAN)
 		certmanager.Generate(request, conf.EzbPki, certFile, keyFile, caFile)
 		logmanager.Debug("Certificate generated")
+	}
+
+	// we have to handle the sta certificate
+	stacert := ""
+	if conf.StaCert != "default" {
+		stacert = conf.StaCert
+	} else {
+		conf.StaCert = "ezb_sta.crt"
+	}
+
+	staca := "" 
+	if conf.StaPath == "default" {
+		_, staca = os.Stat(path.Join(exPath, stacert))
+		conf.StaPath = exPath
+	} else {
+		_, staca = osStat(path.Join(conf.StaPath, stacert))
+	}
+
+	if os.IsNotExist(staca) {
+		logmanager.Warning(fmt.Sprintf("STA certificate %s not found at %s",stacert,staca))
+		fmt.Printf("\nSTA public certificate is not found, please change configuration file after STA cert is copied",s)
+		fmt.Printf("\nStaCert => name of the certificate",s)
+		fmt.Printf("\nSTAPath => path of the certificate",s)
+		fmt.Printf("\n")
+	} else {
+		conf.StaCert = 
+		logmanager.Info("STA certificate found and set in configuration file")
 	}
 
 	if quiet == false {

@@ -27,6 +27,8 @@ type Configuration struct {
 	PrivateKey      string `json:"privatekey"`
 	PublicCert      string `json:"publiccert"`
 	CaCert          string `json:"cacert"`
+	StaCert			string `json:"default"`
+	StaPath			string `json:"default"`
 	DB              string `json:"dbpath"`
 	ServiceName     string `json:"servicename"`
 	ServiceFullName string `json:"servicefullname"`
