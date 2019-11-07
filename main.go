@@ -27,34 +27,52 @@ import (
 
 	"github.com/urfave/cli"
 	"golang.org/x/sys/windows/svc"
+	
+	fqdn "github.com/ShowMax/go-fqdn"
 )
 
 var logPath string
-var conf configuration.Configuration
 var exPath string
+var quiet bool
 
 func init() {
 	isIntSess, _ := svc.IsAnInteractiveSession()
 	ex, _ := os.Executable()
 	exPath = filepath.Dir(ex)
 	// Loading the conf if exists
-	conf, _ := configuration.CheckConfig(true, exPath)
+	_fqdn := fqdn.Get()
+	quiet = true
+	hostname, _ := os.Hostname()
+	err := configuration.CheckConfig(true, exPath)
+	if err != nil {
+		quiet = false
+		configuration.Conf.Listen = ":5100"
+		configuration.Conf.ServiceFullName = "Easy Bastion Vault"
+		configuration.Conf.ServiceName = "ezb_vault"
+		configuration.Conf.LogLevel = "warning"
+		configuration.Conf.CaCert = "cert/ca.crt"
+		configuration.Conf.PrivateKey = "cert/ezb_vault.key"
+		configuration.Conf.PublicCert = "cert/ezb_vault.crt"
+		configuration.Conf.DB = "db/ezb_vault.db"
+		configuration.Conf.EzbPki = "localhost:6000"
+		configuration.Conf.LogPath = "default"
+		configuration.Conf.JsonToStdout = false
+		configuration.Conf.ReportCaller = false
+		configuration.Conf.SAN = []string{_fqdn, hostname}
+	}
 
 	defaultconflisten = "localhost:5100"
 	logmanager.StartWindowsEvent("ezb_vault")
 
 	exe, _ := os.Executable()
 	// logpath is not the same with a debug (exe folder) or service (%windor%\system32)
-	if conf.LogPath == "default" {
+	if configuration.Conf.LogPath == "" {
 		logPath = filepath.Dir(exe)+string(os.PathSeparator)+"log"
 	} else {
-		logPath = conf.LogPath
+		logPath = configuration.Conf.LogPath
 	}
-	
-	// TODO, set the loglevel as described in the conf file
-	logmanager.SetLogLevel(conf.LogLevel, logPath, "ezb_vault.log", 1024, 5, 10, isIntSess, conf.ReportCaller)
+	logmanager.SetLogLevel(configuration.Conf.LogLevel, logPath, "ezb_vault.log", 1024, 5, 10, isIntSess, configuration.Conf.ReportCaller, configuration.Conf.JsonToStdout)
 
-	isIntSess, err := svc.IsAnInteractiveSession()
 	if err != nil {
 		logmanager.Fatal(fmt.Sprintf("failed to determine if we are running in an interactive session: %v", err))
 	}
@@ -70,10 +88,10 @@ func main() {
 
 	if !isIntSess {
 		// if not in session, it is a start request
-		conf, err := configuration.CheckConfig(false, exPath)
+		err := configuration.CheckConfig(false, exPath)
 		if err == nil {
-			logmanager.Debug(fmt.Sprintf("Service %s request to start ...",conf.ServiceName))
-			RunService(conf.ServiceName, false)
+			logmanager.Debug(fmt.Sprintf("Service %s request to start ...",configuration.Conf.ServiceName))
+			RunService(configuration.Conf.ServiceName, false)
 		}
 		return
 	}
@@ -89,7 +107,7 @@ func main() {
 			Name:  "init",
 			Usage: "Genarate config file.",
 			Action: func(c *cli.Context) error {
-				err := setup.Setup(true)
+				err := setup.Setup(true, quiet)
 				return err
 			},
 		}, {
@@ -97,8 +115,8 @@ func main() {
 			Usage: "Start ezb_vault in console.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command debug started")
-				conf, _ := configuration.CheckConfig(true, exPath)
-				RunService(conf.ServiceName,true)
+				configuration.CheckConfig(true, exPath)
+				RunService(configuration.Conf.ServiceName,true)
 				return nil
 			},
 		}, {
@@ -106,29 +124,29 @@ func main() {
 			Usage: "Add ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command install started")
-				conf, _ := configuration.CheckConfig(true, exPath)
-				return servicemanager.InstallService(conf.ServiceName, conf.ServiceFullName)			},
+				configuration.CheckConfig(true, exPath)
+				return servicemanager.InstallService(configuration.Conf.ServiceName, configuration.Conf.ServiceFullName)			},
 		}, {
 			Name:  "remove",
 			Usage: "Remove ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command remove started")
-				conf, _ := configuration.CheckConfig(true, exPath)
-				return servicemanager.RemoveService(conf.ServiceName)			},
+				configuration.CheckConfig(true, exPath)
+				return servicemanager.RemoveService(configuration.Conf.ServiceName)			},
 		}, {
 			Name:  "start",
 			Usage: "Start ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command start started")
-				conf, _ := configuration.CheckConfig(true, exPath)
-				return servicemanager.StartService(conf.ServiceName)			},
+				configuration.CheckConfig(true, exPath)
+				return servicemanager.StartService(configuration.Conf.ServiceName)			},
 		}, {
 			Name:  "stop",
 			Usage: "Stop ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command stop started")
-				conf, _ := configuration.CheckConfig(true, exPath)
-				return servicemanager.ControlService(conf.ServiceName, svc.Stop, svc.Stopped)			},
+				configuration.CheckConfig(true, exPath)
+				return servicemanager.ControlService(configuration.Conf.ServiceName, svc.Stop, svc.Stopped)			},
 		},
 	}
 

@@ -22,6 +22,9 @@ import (
 	"path"
 )
 
+var ConfFile string
+var Conf Configuration
+
 type Configuration struct {
 	Listen          string `json:"listen"`
 	PrivateKey      string `json:"privatekey"`
@@ -33,20 +36,21 @@ type Configuration struct {
 	ServiceName     string `json:"servicename"`
 	ServiceFullName string `json:"servicefullname"`
 	LogLevel        string `json:"loglevel"`
-	LogPath			string `json:"default"`
+	LogPath			string `json:"logpath"`
 	EzbPki          string `json:"ezb_pki"`
-	ReportCaller    bool `json:"false"`
+	ReportCaller    bool `json:"reportcaller"`
+	JsonToStdout	bool `json:"jsonstdout"`
 	SAN             []string `json:"san"`
 }
 
 
-func CheckConfig(isIntSess bool, exPath string) (conf Configuration, err error) {
-	confFile := path.Join(exPath, "conf/config.json")
-	raw, err := ioutil.ReadFile(confFile)
+func CheckConfig(isIntSess bool, exPath string) (err error) {
+	ConfFile = path.Join(exPath, "conf/config.json")
+	raw, err := ioutil.ReadFile(ConfFile)
 	if err != nil {
-		return conf, err
+		return err
 	}
-	json.Unmarshal(raw, &conf)
-	return conf, nil
+	json.Unmarshal(raw, &Conf)
+	return nil
 }
 
