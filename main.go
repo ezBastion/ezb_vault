@@ -36,7 +36,7 @@ var exPath string
 var quiet bool
 
 func init() {
-	isIntSess, _ := svc.IsAnInteractiveSession()
+
 	ex, _ := os.Executable()
 	exPath = filepath.Dir(ex)
 	// Loading the conf if exists
@@ -49,13 +49,13 @@ func init() {
 		configuration.Conf.Listen = ":5100"
 		configuration.Conf.ServiceFullName = "Easy Bastion Vault"
 		configuration.Conf.ServiceName = "ezb_vault"
-		configuration.Conf.LogLevel = "warning"
+		configuration.Conf.LogLevel = "debug"
 		configuration.Conf.CaCert = "cert/ca.crt"
 		configuration.Conf.PrivateKey = "cert/ezb_vault.key"
 		configuration.Conf.PublicCert = "cert/ezb_vault.crt"
 		configuration.Conf.DB = "db/ezb_vault.db"
 		configuration.Conf.EzbPki = "localhost:6000"
-		configuration.Conf.LogPath = "default"
+		configuration.Conf.LogPath = ""
 		configuration.Conf.JsonToStdout = false
 		configuration.Conf.ReportCaller = false
 		configuration.Conf.SAN = []string{_fqdn, hostname}
@@ -71,11 +71,9 @@ func init() {
 	} else {
 		logPath = configuration.Conf.LogPath
 	}
+	isIntSess, _ := svc.IsAnInteractiveSession()
 	logmanager.SetLogLevel(configuration.Conf.LogLevel, logPath, "ezb_vault.log", 1024, 5, 10, isIntSess, configuration.Conf.ReportCaller, configuration.Conf.JsonToStdout)
 
-	if err != nil {
-		logmanager.Fatal(fmt.Sprintf("failed to determine if we are running in an interactive session: %v", err))
-	}
 	if !isIntSess {
 		// if not in session, set a default log folder
 		logmanager.Info("EZB_VAULT started by system command")
