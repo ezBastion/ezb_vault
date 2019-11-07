@@ -52,7 +52,7 @@ func init() {
 	}
 	
 	// TODO, set the loglevel as described in the conf file
-	logmanager.SetLogLevel(conf.LogLevel, logPath, "ezb_vault.log", 1024, 5, 10, isIntSess)
+	logmanager.SetLogLevel(conf.LogLevel, logPath, "ezb_vault.log", 1024, 5, 10, isIntSess, conf.ReportCaller)
 
 	isIntSess, err := svc.IsAnInteractiveSession()
 	if err != nil {

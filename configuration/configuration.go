@@ -33,6 +33,7 @@ type Configuration struct {
 	LogLevel        string `json:"loglevel"`
 	LogPath			string `json:"default"`
 	EzbPki          string `json:"ezb_pki"`
+	ReportCaller    bool `json:"false"`
 	SAN             []string `json:"san"`
 }
 
