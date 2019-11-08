@@ -77,10 +77,14 @@ func Setup(isIntSess bool, quiet bool) error {
 	CheckFolder(isIntSess)
 
 	if quiet == false {
+		logmanager.Info("**************************", true)
+		logmanager.Info("** EZB VAULT SETUP MODE **", true)
+		logmanager.Info("**************************", true)
+		logmanager.Info("Entering in the setup mode. Please answer the following requests ", true)
 		logmanager.Info("\n\n",true)
-		logmanager.Info("***********", true)
-		logmanager.Info("*** PKI ***", true)
-		logmanager.Info("***********", true)
+		logmanager.Info("*******************", true)
+		logmanager.Info("*** PKI settings***", true)
+		logmanager.Info("*******************", true)
 		logmanager.Info("ezBastion nodes use elliptic curve digital signature algorithm ", true)
 		logmanager.Info("(ECDSA) to communicate.",true)
 		logmanager.Info("We need ezb_pki address and port, to request certificat pair.",true)
@@ -103,6 +107,9 @@ func Setup(isIntSess bool, quiet bool) error {
 		}
 		_fqdn := fqdn.Get()
 		hostname, _ := os.Hostname()
+		logmanager.Info("********************", true)
+		logmanager.Info("*** SAN settings ***", true)
+		logmanager.Info("********************", true)
 		logmanager.Info("Certificat Subject Alternative Name.",true)
 		logmanager.Info(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
 		for {
@@ -152,7 +159,9 @@ func Setup(isIntSess bool, quiet bool) error {
 		} else {
 			staca = path.Join(conf.Conf.StaPath, stacert)
 		}
-	
+		logmanager.Info("********************************", true)
+		logmanager.Info("*** STA public cert settings ***", true)
+		logmanager.Info("********************************", true)
 		_, stapub := os.Stat(staca)
 		tpath := conf.Conf.StaPath
 		tcert := conf.Conf.StaCert
