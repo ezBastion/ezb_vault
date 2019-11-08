@@ -77,14 +77,14 @@ func Setup(isIntSess bool, quiet bool) error {
 	CheckFolder(isIntSess)
 
 	if quiet == false {
-		logmanager.Info("\n\n")
-		logmanager.Info("***********")
-		logmanager.Info("*** PKI ***")
-		logmanager.Info("***********")
-		logmanager.Info("ezBastion nodes use elliptic curve digital signature algorithm ")
-		logmanager.Info("(ECDSA) to communicate.")
-		logmanager.Info("We need ezb_pki address and port, to request certificat pair.")
-		logmanager.Info("ex: 10.20.1.2:6000 pki.domain.local:6000")
+		logmanager.Info("\n\n",true)
+		logmanager.Info("***********", true)
+		logmanager.Info("*** PKI ***", true)
+		logmanager.Info("***********", true)
+		logmanager.Info("ezBastion nodes use elliptic curve digital signature algorithm ", true)
+		logmanager.Info("(ECDSA) to communicate.",true)
+		logmanager.Info("We need ezb_pki address and port, to request certificat pair.",true)
+		logmanager.Info("ex: 10.20.1.2:6000 pki.domain.local:6000",true)
 
 		for {
 			p := ez_stdio.AskForValue("ezb_pki", conf.Conf.EzbPki, `^[a-zA-Z0-9-\.]+:[0-9]{4,5}$`)
@@ -103,7 +103,7 @@ func Setup(isIntSess bool, quiet bool) error {
 		}
 		_fqdn := fqdn.Get()
 		hostname, _ := os.Hostname()
-		logmanager.Info("Certificat Subject Alternative Name.")
+		logmanager.Info("Certificat Subject Alternative Name.",true)
 		logmanager.Info(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
 		for {
 			tmp := conf.Conf.SAN
@@ -169,7 +169,7 @@ func Setup(isIntSess bool, quiet bool) error {
 				}
 			} else {
 				conf.Conf.StaCert = stacert
-				logmanager.Info("STA certificate found and set in configuration file")
+				logmanager.Info("STA certificate found and set in configuration file",true)
 			}
 		}
 	
