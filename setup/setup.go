@@ -81,10 +81,10 @@ func Setup(isIntSess bool, quiet bool) error {
 		logmanager.Info("** EZB VAULT SETUP MODE **", true)
 		logmanager.Info("**************************", true)
 		logmanager.Info("Entering in the setup mode. Please answer the following requests ", true)
-		logmanager.Info("\n\n",true)
-		logmanager.Info("*******************", true)
-		logmanager.Info("*** PKI settings***", true)
-		logmanager.Info("*******************", true)
+		logmanager.Info("\n",true)
+		logmanager.Info("********************", true)
+		logmanager.Info("*** PKI settings ***", true)
+		logmanager.Info("********************", true)
 		logmanager.Info("ezBastion nodes use elliptic curve digital signature algorithm ", true)
 		logmanager.Info("(ECDSA) to communicate.",true)
 		logmanager.Info("We need ezb_pki address and port, to request certificat pair.",true)
@@ -146,22 +146,25 @@ func Setup(isIntSess bool, quiet bool) error {
 	
 		// we have to handle the sta certificate
 		stacert := ""
-		if conf.Conf.StaCert != "default" {
+		if conf.Conf.StaCert != "" {
 			stacert = conf.Conf.StaCert
 		} else {
+			stacert = "ezb_sta.crt"
 			conf.Conf.StaCert = "ezb_sta.crt"
 		}
 	
 		staca := "" 
-		if conf.Conf.StaPath == "default" {
+		if conf.Conf.StaPath == "" {
 			staca = path.Join(exPath, stacert)
 			conf.Conf.StaPath = exPath
 		} else {
-			staca = path.Join(conf.Conf.StaPath, stacert)
+			staca = path.Join(conf.Conf.StaPath, conf.Conf.StaCert)
 		}
 		logmanager.Info("********************************", true)
 		logmanager.Info("*** STA public cert settings ***", true)
 		logmanager.Info("********************************", true)
+		logmanager.Debug(fmt.Sprintf("sta public key path set to %s",conf.Conf.StaPath))
+		logmanager.Debug(fmt.Sprintf("sta public key file set to %s",conf.Conf.StaCert))
 		_, stapub := os.Stat(staca)
 		tpath := conf.Conf.StaPath
 		tcert := conf.Conf.StaCert
@@ -177,8 +180,10 @@ func Setup(isIntSess bool, quiet bool) error {
 					break
 				}
 			} else {
-				conf.Conf.StaCert = stacert
-				logmanager.Info("STA certificate found and set in configuration file",true)
+				conf.Conf.StaPath = tpath
+				conf.Conf.StaCert = tcert
+				logmanager.Info(fmt.Sprintf("STA certificate found and set in configuration file %s in folder %s",tpath,tcert),true)
+				break
 			}
 		}
 	

@@ -50,12 +50,14 @@ func init() {
 		configuration.Conf.ServiceFullName = "Easy Bastion Vault"
 		configuration.Conf.ServiceName = "ezb_vault"
 		configuration.Conf.LogLevel = "debug"
+		configuration.Conf.LogPath = ""
 		configuration.Conf.CaCert = "cert/ca.crt"
 		configuration.Conf.PrivateKey = "cert/ezb_vault.key"
 		configuration.Conf.PublicCert = "cert/ezb_vault.crt"
 		configuration.Conf.DB = "db/ezb_vault.db"
 		configuration.Conf.EzbPki = "localhost:6000"
-		configuration.Conf.LogPath = ""
+		configuration.Conf.StaCert = ""
+		configuration.Conf.StaPath= ""
 		configuration.Conf.JsonToStdout = false
 		configuration.Conf.ReportCaller = false
 		configuration.Conf.SAN = []string{_fqdn, hostname}
