@@ -106,7 +106,7 @@ func MainGin(serverchan *chan bool) {
 	r := gin.Default()
 	r.Use(ginrus.Ginrus(log.StandardLogger(), time.RFC3339, true))
 	r.Use(Middleware.AddHeaders)
-	r.Use(Middleware.AuthJWT(db, configuration.Conf))
+	r.Use(Middleware.AuthJWT(db))
 	r.OPTIONS("*a", func(c *gin.Context) {
 		c.AbortWithStatus(200)
 	})

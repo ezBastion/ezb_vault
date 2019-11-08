@@ -28,7 +28,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -47,7 +46,7 @@ type Payload struct {
 	IAT int    `json:"iat"`
 }
 
-func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
+func AuthJWT(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		logmanager.WithFields("Middleware","jwt")
@@ -65,8 +64,6 @@ func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 			return
 		}
 		tokenString := bearer[1]
-		ex, _ := os.Executable()
-		exPath := filepath.Dir(ex)
 		parts := strings.Split(tokenString, ".")
 		if len(parts) != 3 {
 			logmanager.Error("Bad bearer format.")
@@ -87,7 +84,10 @@ func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 			return
 		}
 		jwtkeyfile := fmt.Sprintf("%s.crt", payload.ISS)
-		jwtpubkey := path.Join(exPath, "cert", jwtkeyfile)
+		// change the path to the configuration file
+		// TODO check for cert name itself, in the payload
+		jwtpubkey := path.Join(configuration.Conf.StaPath, jwtkeyfile)
+		logmanager.Debug(fmt.Sprintf("sta public certificate set to %s", jwtpubkey))
 
 		if _, err := os.Stat(jwtpubkey); os.IsNotExist(err) {
 			logmanager.Error(fmt.Sprintf("Unable to load sta public certificate: ", err.Error()))
