@@ -46,7 +46,7 @@ type Payload struct {
 	IAT int    `json:"iat"`
 }
 
-func AuthJWT(db *gorm.DB) gin.HandlerFunc {
+func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		logmanager.WithFields("Middleware","jwt")
@@ -86,7 +86,8 @@ func AuthJWT(db *gorm.DB) gin.HandlerFunc {
 		jwtkeyfile := fmt.Sprintf("%s.crt", payload.ISS)
 		// change the path to the configuration file
 		// TODO check for cert name itself, in the payload
-		jwtpubkey := path.Join(configuration.Conf.StaPath, jwtkeyfile)
+		jwtpubkey := path.Join(conf.StaPath, jwtkeyfile)
+		logmanager.Debug(fmt.Sprintf("##### sta public certificate set to %s", conf.StaPath))
 		logmanager.Debug(fmt.Sprintf("sta public certificate set to %s", jwtpubkey))
 
 		if _, err := os.Stat(jwtpubkey); os.IsNotExist(err) {

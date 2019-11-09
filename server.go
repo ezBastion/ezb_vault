@@ -24,6 +24,8 @@ import (
 	"os/signal"
 	"path"
 	"time"
+	"path/filepath"
+	
 	log "github.com/sirupsen/logrus"
 	"github.com/ezbastion/ezb_lib/logmanager"
 	ezbevent "github.com/ezbastion/ezb_lib/eventlogmanager"
@@ -94,8 +96,11 @@ func RunService(name string, isdebug bool) {
 func MainGin(serverchan *chan bool) {
 	ti := time.NewTicker(1 * time.Minute)
 	defer ti.Stop()
+	ex, _ := os.Executable()
+	exPath := filepath.Dir(ex)
+	conf, err := configuration.CheckConfig(false, exPath)
 
-	db, err := configuration.InitDB(configuration.Conf, exPath)
+	db, err := configuration.InitDB(conf, exPath)
 	if err != nil {
 		logmanager.Fatal(fmt.Sprintf("Error during InitDB Configuration : %s", err.Error()))
 		panic(err)
@@ -106,7 +111,7 @@ func MainGin(serverchan *chan bool) {
 	r := gin.Default()
 	r.Use(ginrus.Ginrus(log.StandardLogger(), time.RFC3339, true))
 	r.Use(Middleware.AddHeaders)
-	r.Use(Middleware.AuthJWT(db))
+	r.Use(Middleware.AuthJWT(db, conf))
 	r.OPTIONS("*a", func(c *gin.Context) {
 		c.AbortWithStatus(200)
 	})
@@ -116,14 +121,14 @@ func MainGin(serverchan *chan bool) {
 	tlsConfig := &tls.Config{}
 
 	server := &http.Server{
-		Addr:      configuration.Conf.Listen,
+		Addr:      conf.Listen,
 		TLSConfig: tlsConfig,
 		Handler:   r,
 	}
 
 	logmanager.Info("Server EZB_VAULT started")
 	go func() {
-		if err := server.ListenAndServeTLS(path.Join(exPath, configuration.Conf.PublicCert), path.Join(exPath, configuration.Conf.PrivateKey)); err != nil {
+		if err := server.ListenAndServeTLS(path.Join(exPath, conf.PublicCert), path.Join(exPath, conf.PrivateKey)); err != nil {
 			logmanager.Error(fmt.Sprintf("listen: %s", err))
 		}
 	}()

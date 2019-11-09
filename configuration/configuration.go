@@ -23,7 +23,6 @@ import (
 )
 
 var ConfFile string
-var Conf Configuration
 
 type Configuration struct {
 	Listen          string `json:"listen"`
@@ -44,13 +43,13 @@ type Configuration struct {
 }
 
 
-func CheckConfig(isIntSess bool, exPath string) (err error) {
+func CheckConfig(isIntSess bool, exPath string) (conf Configuration, err error) {
 	ConfFile = path.Join(exPath, "conf/config.json")
 	raw, err := ioutil.ReadFile(ConfFile)
 	if err != nil {
-		return err
+		return conf, err
 	}
-	json.Unmarshal(raw, &Conf)
-	return nil
+	json.Unmarshal(raw, &conf)
+	return conf, nil
 }
 

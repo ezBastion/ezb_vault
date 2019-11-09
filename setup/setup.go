@@ -71,7 +71,7 @@ func CheckFolder(isIntSess bool) {
 	}
 }
 
-func Setup(isIntSess bool, quiet bool) error {
+func Setup(isIntSess bool, quiet bool, myconf conf.Configuration) error {
 
 	logmanager.Debug("Entering in setup process")
 	CheckFolder(isIntSess)
@@ -91,7 +91,7 @@ func Setup(isIntSess bool, quiet bool) error {
 		logmanager.Info("ex: 10.20.1.2:6000 pki.domain.local:6000",true)
 
 		for {
-			p := ez_stdio.AskForValue("ezb_pki", conf.Conf.EzbPki, `^[a-zA-Z0-9-\.]+:[0-9]{4,5}$`)
+			p := ez_stdio.AskForValue("ezb_pki", myconf.EzbPki, `^[a-zA-Z0-9-\.]+:[0-9]{4,5}$`)
 			c := ez_stdio.AskForConfirmation(fmt.Sprintf("pki address (%s) ok?", p))
 			if c {
 				conn, err := net.Dial("tcp", p)
@@ -99,7 +99,7 @@ func Setup(isIntSess bool, quiet bool) error {
 					logmanager.Error(fmt.Sprintf("## Failed to connect to %s ##\n", p))
 				} else {
 					conn.Close()
-					conf.Conf.EzbPki = p
+					myconf.EzbPki = p
 					logmanager.Debug(fmt.Sprintf("EZB_PKI set to %s", p))
 					break
 				}
@@ -113,61 +113,61 @@ func Setup(isIntSess bool, quiet bool) error {
 		logmanager.Info("Certificat Subject Alternative Name.",true)
 		logmanager.Info(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
 		for {
-			tmp := conf.Conf.SAN
+			tmp := myconf.SAN
 
-			san := ez_stdio.AskForValue("SAN (comma separated list)", strings.Join(conf.Conf.SAN, ","), `(?m)^[[:ascii:]]*,?$`)
+			san := ez_stdio.AskForValue("SAN (comma separated list)", strings.Join(myconf.SAN, ","), `(?m)^[[:ascii:]]*,?$`)
 
 			t := strings.Replace(san, " ", "", -1)
 			tmp = strings.Split(t, ",")
 			c := ez_stdio.AskForConfirmation(fmt.Sprintf("SAN list %s ok?", tmp))
 			if c {
-				conf.Conf.SAN = tmp
+				myconf.SAN = tmp
 				logmanager.Debug(fmt.Sprintf("EZB_SAN set to %s", tmp))
 				break
 			}
 		}
 
-		_, fica := os.Stat(path.Join(exPath, conf.Conf.CaCert))
+		_, fica := os.Stat(path.Join(exPath, myconf.CaCert))
 		logmanager.Debug(fmt.Sprintf("Cacert sets to %s", fica))
-		_, fipriv := os.Stat(path.Join(exPath, conf.Conf.PrivateKey))
+		_, fipriv := os.Stat(path.Join(exPath, myconf.PrivateKey))
 		logmanager.Debug(fmt.Sprintf("Privatekey sets to %s", fipriv))
-		_, fipub := os.Stat(path.Join(exPath, conf.Conf.PublicCert))
+		_, fipub := os.Stat(path.Join(exPath, myconf.PublicCert))
 		logmanager.Debug(fmt.Sprintf("PublicCert sets to %s", fipub))
 	
 		if os.IsNotExist(fica) || os.IsNotExist(fipriv) || os.IsNotExist(fipub) {
 			logmanager.Debug("Setting the certificate")
-			keyFile := path.Join(exPath, conf.Conf.PrivateKey)
-			certFile := path.Join(exPath, conf.Conf.PublicCert)
-			caFile := path.Join(exPath, conf.Conf.CaCert)
-			request := certmanager.NewCertificateRequest(conf.Conf.ServiceName, 730, conf.Conf.SAN)
-			certmanager.Generate(request, conf.Conf.EzbPki, certFile, keyFile, caFile)
+			keyFile := path.Join(exPath, myconf.PrivateKey)
+			certFile := path.Join(exPath, myconf.PublicCert)
+			caFile := path.Join(exPath, myconf.CaCert)
+			request := certmanager.NewCertificateRequest(myconf.ServiceName, 730, myconf.SAN)
+			certmanager.Generate(request, myconf.EzbPki, certFile, keyFile, caFile)
 			logmanager.Debug("Certificate generated")
 		}
 	
 		// we have to handle the sta certificate
 		stacert := ""
-		if conf.Conf.StaCert != "" {
-			stacert = conf.Conf.StaCert
+		if myconf.StaCert != "" {
+			stacert = myconf.StaCert
 		} else {
 			stacert = "ezb_sta.crt"
-			conf.Conf.StaCert = "ezb_sta.crt"
+			myconf.StaCert = "ezb_sta.crt"
 		}
 	
 		staca := "" 
-		if conf.Conf.StaPath == "" {
+		if myconf.StaPath == "" {
 			staca = path.Join(exPath, stacert)
-			conf.Conf.StaPath = exPath
+			myconf.StaPath = exPath
 		} else {
-			staca = path.Join(conf.Conf.StaPath, conf.Conf.StaCert)
+			staca = path.Join(myconf.StaPath, myconf.StaCert)
 		}
 		logmanager.Info("********************************", true)
 		logmanager.Info("*** STA public cert settings ***", true)
 		logmanager.Info("********************************", true)
-		logmanager.Debug(fmt.Sprintf("sta public key path set to %s",conf.Conf.StaPath))
-		logmanager.Debug(fmt.Sprintf("sta public key file set to %s",conf.Conf.StaCert))
+		logmanager.Debug(fmt.Sprintf("sta public key path set to %s",myconf.StaPath))
+		logmanager.Debug(fmt.Sprintf("sta public key file set to %s",myconf.StaCert))
 		_, stapub := os.Stat(staca)
-		tpath := conf.Conf.StaPath
-		tcert := conf.Conf.StaCert
+		tpath := myconf.StaPath
+		tcert := myconf.StaCert
 		for {
 			if os.IsNotExist(stapub) {
 				if ez_stdio.AskForConfirmation("STA public cert is not found, do you want to set an alternate path and file ?"){
@@ -176,18 +176,18 @@ func Setup(isIntSess bool, quiet bool) error {
 					staca = path.Join(tpath, tcert)
 					_, stapub = os.Stat(staca)
 				} else {
-					displaySTAError(stacert,conf.Conf.StaPath)
+					displaySTAError(stacert,myconf.StaPath)
 					break
 				}
 			} else {
-				conf.Conf.StaPath = tpath
-				conf.Conf.StaCert = tcert
+				myconf.StaPath = tpath
+				myconf.StaCert = tcert
 				logmanager.Info(fmt.Sprintf("STA certificate found and set in configuration file %s in folder %s",tpath,tcert),true)
 				break
 			}
 		}
 	
-		c, _ := json.Marshal(conf.Conf)
+		c, _ := json.Marshal(myconf)
 		ioutil.WriteFile(conf.ConfFile, c, 0600)
 		logmanager.Info(fmt.Sprintf("%s saved",conf.ConfFile))
 	}
