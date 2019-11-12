@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"github.com/ezbastion/ezb_lib/certmanager"
 	"github.com/ezbastion/ezb_lib/logmanager"
-	conf "github.com/ezbastion/ezb_vault/configuration"
+	"github.com/ezbastion/ezb_vault/configuration"
 	"github.com/ezbastion/ezb_lib/ez_stdio"
 	"strings"
 
@@ -71,12 +71,17 @@ func CheckFolder(isIntSess bool) {
 	}
 }
 
-func Setup(isIntSess bool, quiet bool, myconf conf.Configuration) error {
+func Setup(isIntSess bool) error {
 
 	logmanager.Debug("Entering in setup process")
-	CheckFolder(isIntSess)
+	ex, _ := os.Executable()
+	exPath = filepath.Dir(ex)
+	ConfFile := path.Join(exPath, "conf/config.json")
+	conf, err := configuration.CheckConfig(true, exPath)
 
-	if quiet == false {
+	CheckFolder(isIntSess)
+	// If StaCert is not set, we have a default conf file
+	if (conf.StaCert == "" || err != nil ) {
 		logmanager.Info("**************************", true)
 		logmanager.Info("** EZB VAULT SETUP MODE **", true)
 		logmanager.Info("**************************", true)
@@ -91,7 +96,7 @@ func Setup(isIntSess bool, quiet bool, myconf conf.Configuration) error {
 		logmanager.Info("ex: 10.20.1.2:6000 pki.domain.local:6000",true)
 
 		for {
-			p := ez_stdio.AskForValue("ezb_pki", myconf.EzbPki, `^[a-zA-Z0-9-\.]+:[0-9]{4,5}$`)
+			p := ez_stdio.AskForValue("ezb_pki", conf.EzbPki, `^[a-zA-Z0-9-\.]+:[0-9]{4,5}$`)
 			c := ez_stdio.AskForConfirmation(fmt.Sprintf("pki address (%s) ok?", p))
 			if c {
 				conn, err := net.Dial("tcp", p)
@@ -99,7 +104,7 @@ func Setup(isIntSess bool, quiet bool, myconf conf.Configuration) error {
 					logmanager.Error(fmt.Sprintf("## Failed to connect to %s ##\n", p))
 				} else {
 					conn.Close()
-					myconf.EzbPki = p
+					conf.EzbPki = p
 					logmanager.Debug(fmt.Sprintf("EZB_PKI set to %s", p))
 					break
 				}
@@ -113,61 +118,61 @@ func Setup(isIntSess bool, quiet bool, myconf conf.Configuration) error {
 		logmanager.Info("Certificat Subject Alternative Name.",true)
 		logmanager.Info(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
 		for {
-			tmp := myconf.SAN
+			tmp := conf.SAN
 
-			san := ez_stdio.AskForValue("SAN (comma separated list)", strings.Join(myconf.SAN, ","), `(?m)^[[:ascii:]]*,?$`)
+			san := ez_stdio.AskForValue("SAN (comma separated list)", strings.Join(conf.SAN, ","), `(?m)^[[:ascii:]]*,?$`)
 
 			t := strings.Replace(san, " ", "", -1)
 			tmp = strings.Split(t, ",")
 			c := ez_stdio.AskForConfirmation(fmt.Sprintf("SAN list %s ok?", tmp))
 			if c {
-				myconf.SAN = tmp
+				conf.SAN = tmp
 				logmanager.Debug(fmt.Sprintf("EZB_SAN set to %s", tmp))
 				break
 			}
 		}
 
-		_, fica := os.Stat(path.Join(exPath, myconf.CaCert))
+		_, fica := os.Stat(path.Join(exPath, conf.CaCert))
 		logmanager.Debug(fmt.Sprintf("Cacert sets to %s", fica))
-		_, fipriv := os.Stat(path.Join(exPath, myconf.PrivateKey))
+		_, fipriv := os.Stat(path.Join(exPath, conf.PrivateKey))
 		logmanager.Debug(fmt.Sprintf("Privatekey sets to %s", fipriv))
-		_, fipub := os.Stat(path.Join(exPath, myconf.PublicCert))
+		_, fipub := os.Stat(path.Join(exPath, conf.PublicCert))
 		logmanager.Debug(fmt.Sprintf("PublicCert sets to %s", fipub))
 	
 		if os.IsNotExist(fica) || os.IsNotExist(fipriv) || os.IsNotExist(fipub) {
 			logmanager.Debug("Setting the certificate")
-			keyFile := path.Join(exPath, myconf.PrivateKey)
-			certFile := path.Join(exPath, myconf.PublicCert)
-			caFile := path.Join(exPath, myconf.CaCert)
-			request := certmanager.NewCertificateRequest(myconf.ServiceName, 730, myconf.SAN)
-			certmanager.Generate(request, myconf.EzbPki, certFile, keyFile, caFile)
+			keyFile := path.Join(exPath, conf.PrivateKey)
+			certFile := path.Join(exPath, conf.PublicCert)
+			caFile := path.Join(exPath, conf.CaCert)
+			request := certmanager.NewCertificateRequest(conf.ServiceName, 730, conf.SAN)
+			certmanager.Generate(request, conf.EzbPki, certFile, keyFile, caFile)
 			logmanager.Debug("Certificate generated")
 		}
 	
 		// we have to handle the sta certificate
 		stacert := ""
-		if myconf.StaCert != "" {
-			stacert = myconf.StaCert
+		if conf.StaCert != "" {
+			stacert = conf.StaCert
 		} else {
 			stacert = "ezb_sta.crt"
-			myconf.StaCert = "ezb_sta.crt"
+			conf.StaCert = "ezb_sta.crt"
 		}
 	
 		staca := "" 
-		if myconf.StaPath == "" {
+		if conf.StaPath == "" {
 			staca = path.Join(exPath, stacert)
-			myconf.StaPath = exPath
+			conf.StaPath = exPath
 		} else {
-			staca = path.Join(myconf.StaPath, myconf.StaCert)
+			staca = path.Join(conf.StaPath, conf.StaCert)
 		}
 		logmanager.Info("********************************", true)
 		logmanager.Info("*** STA public cert settings ***", true)
 		logmanager.Info("********************************", true)
-		logmanager.Debug(fmt.Sprintf("sta public key path set to %s",myconf.StaPath))
-		logmanager.Debug(fmt.Sprintf("sta public key file set to %s",myconf.StaCert))
+		logmanager.Debug(fmt.Sprintf("sta public key path set to %s",conf.StaPath))
+		logmanager.Debug(fmt.Sprintf("sta public key file set to %s",conf.StaCert))
 		_, stapub := os.Stat(staca)
-		tpath := myconf.StaPath
-		tcert := myconf.StaCert
+		tpath := conf.StaPath
+		tcert := conf.StaCert
 		for {
 			if os.IsNotExist(stapub) {
 				if ez_stdio.AskForConfirmation("STA public cert is not found, do you want to set an alternate path and file ?"){
@@ -176,20 +181,20 @@ func Setup(isIntSess bool, quiet bool, myconf conf.Configuration) error {
 					staca = path.Join(tpath, tcert)
 					_, stapub = os.Stat(staca)
 				} else {
-					displaySTAError(stacert,myconf.StaPath)
+					displaySTAError(stacert,conf.StaPath)
 					break
 				}
 			} else {
-				myconf.StaPath = tpath
-				myconf.StaCert = tcert
+				conf.StaPath = tpath
+				conf.StaCert = tcert
 				logmanager.Info(fmt.Sprintf("STA certificate found and set in configuration file %s in folder %s",tpath,tcert),true)
 				break
 			}
 		}
 	
-		c, _ := json.Marshal(myconf)
-		ioutil.WriteFile(conf.ConfFile, c, 0600)
-		logmanager.Info(fmt.Sprintf("%s saved",conf.ConfFile))
+		c, _ := json.Marshal(conf)
+		ioutil.WriteFile(ConfFile, c, 0600)
+		logmanager.Info(fmt.Sprintf("%s saved",ConfFile))
 	}
 
 	return nil

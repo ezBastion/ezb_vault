@@ -18,8 +18,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"encoding/json"
+	"io/ioutil"
+	"path"
 	"path/filepath"
-
 	"github.com/ezbastion/ezb_lib/logmanager"
 	"github.com/ezbastion/ezb_lib/servicemanager"
 	"github.com/ezbastion/ezb_vault/setup"
@@ -34,6 +36,7 @@ import (
 var logPath string
 var exPath string
 var quiet bool
+var conf configuration.Configuration
 
 func init() {
 
@@ -43,7 +46,8 @@ func init() {
 	_fqdn := fqdn.Get()
 	quiet = true
 	hostname, _ := os.Hostname()
-	conf, err := configuration.CheckConfig(true, exPath)
+	var err error
+	conf, err = configuration.CheckConfig(true, exPath)
 	if err != nil {
 		quiet = false
 		conf.Listen = ":5100"
@@ -80,13 +84,17 @@ func init() {
 		// if not in session, set a default log folder
 		logmanager.Info("EZB_VAULT started by system command")
 	}
+
+	c, _ := json.Marshal(conf)
+	ConfFile := path.Join(exPath, "conf/config.json")
+	ioutil.WriteFile(ConfFile, c, 0600)
+	logmanager.Info(fmt.Sprintf("%s saved",ConfFile))
 }
 
 func main() {
 	isIntSess, _ := svc.IsAnInteractiveSession()
 	logmanager.Debug("EZB_VAULT, entering in main process")
-	conf, err := configuration.CheckConfig(false, exPath)
-	
+
 	if !isIntSess {
 		// if not in session, it is a start request
 		if err == nil {
@@ -107,7 +115,7 @@ func main() {
 			Name:  "init",
 			Usage: "Genarate config file.",
 			Action: func(c *cli.Context) error {
-				err := setup.Setup(true, quiet, conf)
+				err := setup.Setup(true)
 				return err
 			},
 		}, {
