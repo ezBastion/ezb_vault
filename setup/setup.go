@@ -149,45 +149,34 @@ func Setup(isIntSess bool) error {
 			logmanager.Debug("Certificate generated")
 		}
 	
-		// we have to handle the sta certificate
-		stacert := ""
-		if conf.StaCert != "" {
-			stacert = conf.StaCert
-		} else {
-			stacert = "ezb_sta.crt"
-			conf.StaCert = "ezb_sta.crt"
-		}
-	
-		staca := "" 
-		if conf.StaPath == "" {
-			staca = path.Join(exPath, stacert)
-			conf.StaPath = exPath
-		} else {
-			staca = path.Join(conf.StaPath, conf.StaCert)
-		}
+		// We set the sta path by mandatory to cert
+		conf.StaPath = path.Join(exPath, "cert")
 		logmanager.Info("********************************", true)
 		logmanager.Info("*** STA public cert settings ***", true)
 		logmanager.Info("********************************", true)
-		logmanager.Debug(fmt.Sprintf("sta public key path set to %s",conf.StaPath))
-		logmanager.Debug(fmt.Sprintf("sta public key file set to %s",conf.StaCert))
+		logmanager.Debug(fmt.Sprintf("sta public key path set mandatory to %s",conf.StaPath))
 		_, stapub := os.Stat(staca)
 		tpath := conf.StaPath
-		tcert := conf.StaCert
+		tcert := "ezb_sta.crt"
+		staca := path.Join(tpath, tcert)
+		conf.StaPath = tpath
+		_, stapub = os.Stat(staca)
 		for {
 			if os.IsNotExist(stapub) {
-				if ez_stdio.AskForConfirmation("STA public cert is not found, do you want to set an alternate path and file ?"){
+				if ez_stdio.AskForConfirmation("STA public cert is not found, do you want to set an alternate path ?"){
 					tpath = ez_stdio.AskForStringValue("ezb_sta public cert path :")
-					tcert = ez_stdio.AskForStringValue("ezb_sta cert file name :")
+					tcert = "ezb_sta.crt"
 					staca = path.Join(tpath, tcert)
 					_, stapub = os.Stat(staca)
 				} else {
-					displaySTAError(stacert,conf.StaPath)
+					logmanager.Warning(fmt.Sprintf("STA certificate not found in folder %s, please fix it after setup process", tpath))
+					fmt.Printf("\nSTA public certificate is not found, please copy STA cert in %s path", tpath)
+					conf.StaPath = tpath
 					break
 				}
 			} else {
 				conf.StaPath = tpath
-				conf.StaCert = tcert
-				logmanager.Info(fmt.Sprintf("STA certificate found and set in configuration file %s in folder %s",tpath,tcert),true)
+				logmanager.Info(fmt.Sprintf("STA certificate found and set in folder %s",tpath),true)
 				break
 			}
 		}
@@ -198,12 +187,4 @@ func Setup(isIntSess bool) error {
 	}
 
 	return nil
-}
-
-func displaySTAError(tcert, tpath string) {
-	logmanager.Warning(fmt.Sprintf("STA certificate %s not found at %s",tcert, tpath))
-	fmt.Printf("\nSTA public certificate is not found, please change configuration file after STA cert is copied")
-	fmt.Printf("\nStaCert => name of the certificate")
-	fmt.Printf("\nSTAPath => path of the certificate")
-	fmt.Printf("\n")
 }
