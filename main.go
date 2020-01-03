@@ -16,27 +16,28 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
+
 	"github.com/ezbastion/ezb_lib/logmanager"
 	"github.com/ezbastion/ezb_lib/servicemanager"
-	"github.com/ezbastion/ezb_vault/setup"
 	"github.com/ezbastion/ezb_vault/configuration"
+	"github.com/ezbastion/ezb_vault/setup"
 
 	"github.com/urfave/cli"
 	"golang.org/x/sys/windows/svc"
-	
+
 	fqdn "github.com/ShowMax/go-fqdn"
 )
 
 var logPath string
 var exPath string
-var quiet bool
 var conf configuration.Configuration
+var firstcall bool
 
 func init() {
 
@@ -44,12 +45,14 @@ func init() {
 	exPath = filepath.Dir(ex)
 	// Loading the conf if exists
 	_fqdn := fqdn.Get()
-	quiet = true
 	hostname, _ := os.Hostname()
+	setup.CheckFolder()
+
 	var err error
 	conf, err = configuration.CheckConfig(true, exPath)
+
 	if err != nil {
-		quiet = false
+		firstcall = true
 		conf.Listen = ":5100"
 		conf.ServiceFullName = "Easy Bastion Vault"
 		conf.ServiceName = "ezb_vault"
@@ -60,8 +63,7 @@ func init() {
 		conf.PublicCert = "cert/ezb_vault.crt"
 		conf.DB = "db/ezb_vault.db"
 		conf.EzbPki = "localhost:6000"
-		conf.StaCert = ""
-		conf.StaPath= ""
+		conf.StaPath = ""
 		conf.JsonToStdout = false
 		conf.ReportCaller = false
 		conf.SAN = []string{_fqdn, hostname}
@@ -73,7 +75,7 @@ func init() {
 	exe, _ := os.Executable()
 	// logpath is not the same with a debug (exe folder) or service (%windor%\system32)
 	if conf.LogPath == "" {
-		logPath = filepath.Dir(exe)+string(os.PathSeparator)+"log"
+		logPath = filepath.Dir(exe) + string(os.PathSeparator) + "log"
 	} else {
 		logPath = conf.LogPath
 	}
@@ -87,8 +89,10 @@ func init() {
 
 	c, _ := json.Marshal(conf)
 	ConfFile := path.Join(exPath, "conf/config.json")
-	ioutil.WriteFile(ConfFile, c, 0600)
-	logmanager.Info(fmt.Sprintf("%s saved",ConfFile))
+	if err := ioutil.WriteFile(ConfFile, c, 0600); err != nil {
+		logmanager.Fatal(err.Error())
+	}
+	logmanager.Info(fmt.Sprintf("%s saved", ConfFile), conf.JsonToStdout)
 }
 
 func main() {
@@ -98,7 +102,7 @@ func main() {
 	if !isIntSess {
 		// if not in session, it is a start request
 		if err == nil {
-			logmanager.Debug(fmt.Sprintf("Service %s request to start ...",conf.ServiceName))
+			logmanager.Debug(fmt.Sprintf("Service %s request to start ...", conf.ServiceName))
 			RunService(conf.ServiceName, false)
 		}
 		return
@@ -115,7 +119,7 @@ func main() {
 			Name:  "init",
 			Usage: "Genarate config file.",
 			Action: func(c *cli.Context) error {
-				err := setup.Setup(true)
+				err := setup.Setup(true, firstcall)
 				return err
 			},
 		}, {
@@ -124,7 +128,7 @@ func main() {
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command debug started")
 				configuration.CheckConfig(true, exPath)
-				RunService(conf.ServiceName,true)
+				RunService(conf.ServiceName, true)
 				return nil
 			},
 		}, {
@@ -133,28 +137,32 @@ func main() {
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command install started")
 				configuration.CheckConfig(true, exPath)
-				return servicemanager.InstallService(conf.ServiceName, conf.ServiceFullName)			},
+				return servicemanager.InstallService(conf.ServiceName, conf.ServiceFullName)
+			},
 		}, {
 			Name:  "remove",
 			Usage: "Remove ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command remove started")
 				configuration.CheckConfig(true, exPath)
-				return servicemanager.RemoveService(conf.ServiceName)			},
+				return servicemanager.RemoveService(conf.ServiceName)
+			},
 		}, {
 			Name:  "start",
 			Usage: "Start ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command start started")
 				configuration.CheckConfig(true, exPath)
-				return servicemanager.StartService(conf.ServiceName)			},
+				return servicemanager.StartService(conf.ServiceName)
+			},
 		}, {
 			Name:  "stop",
 			Usage: "Stop ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command stop started")
 				configuration.CheckConfig(true, exPath)
-				return servicemanager.ControlService(conf.ServiceName, svc.Stop, svc.Stopped)			},
+				return servicemanager.ControlService(conf.ServiceName, svc.Stop, svc.Stopped)
+			},
 		},
 	}
 

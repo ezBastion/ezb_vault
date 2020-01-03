@@ -13,11 +13,11 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with ezBastion.  If not, see <https://www.gnu.org/licenses/>.
 
-
 package configuration
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"path"
 )
@@ -25,30 +25,29 @@ import (
 var ConfFile string
 
 type Configuration struct {
-	Listen          string `json:"listen"`
-	PrivateKey      string `json:"privatekey"`
-	PublicCert      string `json:"publiccert"`
-	CaCert          string `json:"cacert"`
-	StaPath			string `json:"stapath"`
-	DB              string `json:"dbpath"`
-	ServiceName     string `json:"servicename"`
-	ServiceFullName string `json:"servicefullname"`
-	LogLevel        string `json:"loglevel"`
-	LogPath			string `json:"logpath"`
-	EzbPki          string `json:"ezb_pki"`
-	ReportCaller    bool `json:"reportcaller"`
-	JsonToStdout	bool `json:"jsonstdout"`
+	Listen          string   `json:"listen"`
+	PrivateKey      string   `json:"privatekey"`
+	PublicCert      string   `json:"publiccert"`
+	CaCert          string   `json:"cacert"`
+	StaPath         string   `json:"stapath"`
+	DB              string   `json:"dbpath"`
+	ServiceName     string   `json:"servicename"`
+	ServiceFullName string   `json:"servicefullname"`
+	LogLevel        string   `json:"loglevel"`
+	LogPath         string   `json:"logpath"`
+	EzbPki          string   `json:"ezb_pki"`
+	ReportCaller    bool     `json:"reportcaller"`
+	JsonToStdout    bool     `json:"jsonstdout"`
 	SAN             []string `json:"san"`
 }
-
 
 func CheckConfig(isIntSess bool, exPath string) (conf Configuration, err error) {
 	ConfFile = path.Join(exPath, "conf/config.json")
 	raw, err := ioutil.ReadFile(ConfFile)
 	if err != nil {
+		fmt.Println("### error on conffile " + ConfFile)
 		return conf, err
 	}
 	json.Unmarshal(raw, &conf)
 	return conf, nil
 }
-

@@ -23,11 +23,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+
 	"github.com/ezbastion/ezb_lib/certmanager"
+	"github.com/ezbastion/ezb_lib/ez_stdio"
 	"github.com/ezbastion/ezb_lib/logmanager"
 	"github.com/ezbastion/ezb_vault/configuration"
-	"github.com/ezbastion/ezb_lib/ez_stdio"
-	"strings"
 
 	fqdn "github.com/ShowMax/go-fqdn"
 )
@@ -39,7 +40,7 @@ func init() {
 	exPath = filepath.Dir(ex)
 }
 
-func CheckFolder(isIntSess bool) {
+func CheckFolder() {
 
 	if _, err := os.Stat(path.Join(exPath, "cert")); os.IsNotExist(err) {
 		err = os.MkdirAll(path.Join(exPath, "cert"), 0600)
@@ -71,29 +72,27 @@ func CheckFolder(isIntSess bool) {
 	}
 }
 
-func Setup(isIntSess bool) error {
+func Setup(isIntSess bool, firstcall bool) error {
 
 	logmanager.Debug("Entering in setup process")
 	ex, _ := os.Executable()
 	exPath = filepath.Dir(ex)
 	ConfFile := path.Join(exPath, "conf/config.json")
-	conf, err := configuration.CheckConfig(true, exPath)
+	conf, _ := configuration.CheckConfig(true, exPath)
 
-	CheckFolder(isIntSess)
-	// If StaCert is not set, we have a default conf file
-	if (conf.StaCert == "" || err != nil ) {
+	if firstcall {
 		logmanager.Info("**************************", true)
 		logmanager.Info("** EZB VAULT SETUP MODE **", true)
 		logmanager.Info("**************************", true)
 		logmanager.Info("Entering in the setup mode. Please answer the following requests ", true)
-		logmanager.Info("\n",true)
+		logmanager.Info("\n", true)
 		logmanager.Info("********************", true)
 		logmanager.Info("*** PKI settings ***", true)
 		logmanager.Info("********************", true)
 		logmanager.Info("ezBastion nodes use elliptic curve digital signature algorithm ", true)
-		logmanager.Info("(ECDSA) to communicate.",true)
-		logmanager.Info("We need ezb_pki address and port, to request certificat pair.",true)
-		logmanager.Info("ex: 10.20.1.2:6000 pki.domain.local:6000",true)
+		logmanager.Info("(ECDSA) to communicate.", true)
+		logmanager.Info("We need ezb_pki address and port, to request certificat pair.", true)
+		logmanager.Info("ex: 10.20.1.2:6000 pki.domain.local:6000", true)
 
 		for {
 			p := ez_stdio.AskForValue("ezb_pki", conf.EzbPki, `^[a-zA-Z0-9-\.]+:[0-9]{4,5}$`)
@@ -115,7 +114,7 @@ func Setup(isIntSess bool) error {
 		logmanager.Info("********************", true)
 		logmanager.Info("*** SAN settings ***", true)
 		logmanager.Info("********************", true)
-		logmanager.Info("Certificat Subject Alternative Name.",true)
+		logmanager.Info("Certificat Subject Alternative Name.", true)
 		logmanager.Info(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
 		for {
 			tmp := conf.SAN
@@ -138,7 +137,7 @@ func Setup(isIntSess bool) error {
 		logmanager.Debug(fmt.Sprintf("Privatekey sets to %s", fipriv))
 		_, fipub := os.Stat(path.Join(exPath, conf.PublicCert))
 		logmanager.Debug(fmt.Sprintf("PublicCert sets to %s", fipub))
-	
+
 		if os.IsNotExist(fica) || os.IsNotExist(fipriv) || os.IsNotExist(fipub) {
 			logmanager.Debug("Setting the certificate")
 			keyFile := path.Join(exPath, conf.PrivateKey)
@@ -148,42 +147,40 @@ func Setup(isIntSess bool) error {
 			certmanager.Generate(request, conf.EzbPki, certFile, keyFile, caFile)
 			logmanager.Debug("Certificate generated")
 		}
-	
+
 		// We set the sta path by mandatory to cert
 		conf.StaPath = path.Join(exPath, "cert")
 		logmanager.Info("********************************", true)
 		logmanager.Info("*** STA public cert settings ***", true)
 		logmanager.Info("********************************", true)
-		logmanager.Debug(fmt.Sprintf("sta public key path set mandatory to %s",conf.StaPath))
-		_, stapub := os.Stat(staca)
+		logmanager.Debug(fmt.Sprintf("sta public key path set mandatory to %s", conf.StaPath))
 		tpath := conf.StaPath
 		tcert := "ezb_sta.crt"
 		staca := path.Join(tpath, tcert)
 		conf.StaPath = tpath
-		_, stapub = os.Stat(staca)
+		_, stapub := os.Stat(staca)
 		for {
 			if os.IsNotExist(stapub) {
-				if ez_stdio.AskForConfirmation("STA public cert is not found, do you want to set an alternate path ?"){
+				if ez_stdio.AskForConfirmation("STA public cert is not found, do you want to set an alternate path ?") {
 					tpath = ez_stdio.AskForStringValue("ezb_sta public cert path :")
 					tcert = "ezb_sta.crt"
 					staca = path.Join(tpath, tcert)
 					_, stapub = os.Stat(staca)
 				} else {
-					logmanager.Warning(fmt.Sprintf("STA certificate not found in folder %s, please fix it after setup process", tpath))
-					fmt.Printf("\nSTA public certificate is not found, please copy STA cert in %s path", tpath)
+					logmanager.Warning(fmt.Sprintf("STA public certificate not found in folder %s, please fix it after setup process", tpath))
 					conf.StaPath = tpath
 					break
 				}
 			} else {
 				conf.StaPath = tpath
-				logmanager.Info(fmt.Sprintf("STA certificate found and set in folder %s",tpath),true)
+				logmanager.Info(fmt.Sprintf("STA certificate found and set in folder %s", tpath), true)
 				break
 			}
 		}
-	
+
 		c, _ := json.Marshal(conf)
 		ioutil.WriteFile(ConfFile, c, 0600)
-		logmanager.Info(fmt.Sprintf("%s saved",ConfFile))
+		logmanager.Info(fmt.Sprintf("%s saved", ConfFile))
 	}
 
 	return nil
