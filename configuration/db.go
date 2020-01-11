@@ -22,11 +22,13 @@ import (
 	m "github.com/ezbastion/ezb_vault/models"
 
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 func InitDB(conf Configuration, exPath string) (*gorm.DB, error) {
 	var db *gorm.DB
 	var err error
+
 	db, err = gorm.Open("sqlite3", path.Join(exPath, conf.DB))
 
 	if err != nil {

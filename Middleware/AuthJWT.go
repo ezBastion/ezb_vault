@@ -28,13 +28,13 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	log "github.com/sirupsen/logrus"
+
+	"github.com/ezbastion/ezb_lib/logmanager"
 )
 
 type Payload struct {
@@ -49,47 +49,49 @@ type Payload struct {
 func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		logg := log.WithFields(log.Fields{"Middleware": "jwt"})
+		logmanager.WithFields("Middleware","jwt")
 		var err error
 		authHead := c.GetHeader("Authorization")
 		bearer := strings.Split(authHead, " ")
 		if len(bearer) != 2 {
-			logg.Error("bad Authorization #V0001: authHead:'" + authHead + "'")
+			logmanager.Error(fmt.Sprintf("bad Authorization #V0001: authHead:'%s'",authHead))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0001"))
 			return
 		}
 		if strings.Compare(strings.ToLower(bearer[0]), "bearer") != 0 {
-			logg.Error("bad Authorization #V0002: " + authHead)
+			logmanager.Error(fmt.Sprintf("bad Authorization #V0002: %s",authHead))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0002"))
 			return
 		}
 		tokenString := bearer[1]
-		ex, _ := os.Executable()
-		exPath := filepath.Dir(ex)
 		parts := strings.Split(tokenString, ".")
 		if len(parts) != 3 {
-			logg.Error("Bad bearer format.")
+			logmanager.Error("Bad bearer format.")
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0012"))
 			return
 		}
 		p, err := base64.RawStdEncoding.DecodeString(parts[1])
 		if err != nil {
-			logg.Error("Unable to decode payload: ", err)
+			logmanager.Error(fmt.Sprintf("Unable to decode payload: ", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0009"))
 			return
 		}
 		var payload Payload
 		err = json.Unmarshal(p, &payload)
 		if err != nil {
-			logg.Error("Unable to parse payload: ", err)
+			logmanager.Error(fmt.Sprintf("Unable to parse payload: ", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0011"))
 			return
 		}
 		jwtkeyfile := fmt.Sprintf("%s.crt", payload.ISS)
-		jwtpubkey := path.Join(exPath, "cert", jwtkeyfile)
+		// change the path to the configuration file
+		// TODO check for cert name itself, in the payload
+		jwtpubkey := path.Join(conf.StaPath, jwtkeyfile)
+		logmanager.Debug(fmt.Sprintf("##### sta public certificate set to %s", conf.StaPath))
+		logmanager.Debug(fmt.Sprintf("sta public certificate set to %s", jwtpubkey))
 
 		if _, err := os.Stat(jwtpubkey); os.IsNotExist(err) {
-			logg.Error("Unable to load sta public certificat: ", err)
+			logmanager.Error(fmt.Sprintf("Unable to load sta public certificate: ", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0010"))
 			return
 		}
@@ -97,14 +99,14 @@ func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 		key, _ := ioutil.ReadFile(jwtpubkey)
 		var ecdsaKey *ecdsa.PublicKey
 		if ecdsaKey, err = jwt.ParseECPublicKeyFromPEM(key); err != nil {
-			logg.Error("Unable to parse ECDSA public key: ", err)
+			logmanager.Error(fmt.Sprintf("Unable to parse ECDSA public key: ", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0003"))
 		}
 		methode := jwt.GetSigningMethod("ES256")
 		// parts := strings.Split(tokenString, ".")
 		err = methode.Verify(strings.Join(parts[0:2], "."), parts[2], ecdsaKey)
 		if err != nil {
-			logg.Error("Error while verifying key: ", err)
+			logmanager.Error(fmt.Sprintf("Error while verifying key: %s", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0004"))
 		}
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -118,7 +120,7 @@ func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 			c.Set("sub", claims["sub"])
 		} else {
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0005"))
-			logg.Error(err)
+			logmanager.Error(err.Error())
 			return
 		}
 		c.Next()
