@@ -157,7 +157,7 @@ func Setup(isIntSess bool, firstcall bool) error {
 		tpath := conf.StaPath
 		tcert := "ezb_sta.crt"
 		staca := path.Join(tpath, tcert)
-		conf.StaPath = tpath
+		// conf.StaPath = tpath
 		_, stapub := os.Stat(staca)
 		for {
 			if os.IsNotExist(stapub) {
