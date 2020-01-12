@@ -73,7 +73,7 @@ func CheckFolder() {
 }
 
 func Setup(isIntSess bool, firstcall bool) error {
-
+	CheckFolder()
 	logmanager.Debug("Entering in setup process")
 	ex, _ := os.Executable()
 	exPath = filepath.Dir(ex)

@@ -44,7 +44,6 @@ func init() {
 	// Loading the conf if exists
 	_fqdn := fqdn.Get()
 	hostname, _ := os.Hostname()
-	setup.CheckFolder()
 
 	var err error
 	conf, err = configuration.CheckConfig(true, exPath)
