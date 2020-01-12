@@ -97,12 +97,10 @@ func main() {
 
 	logmanager.Debug("EZB_VAULT, entering in main process")
 
-	if !isIntSess {
+	if !isIntSess && !firstcall {
 		// if not in session, it is a start request
-		if err == nil {
-			logmanager.Debug(fmt.Sprintf("Service %s request to start ...", conf.ServiceName))
-			RunService(conf.ServiceName, false)
-		}
+		logmanager.Debug(fmt.Sprintf("Service %s request to start ...", conf.ServiceName))
+		RunService(conf.ServiceName, false)
 		return
 	}
 
