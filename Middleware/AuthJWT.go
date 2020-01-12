@@ -73,14 +73,14 @@ func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 		}
 		p, err := base64.RawStdEncoding.DecodeString(parts[1])
 		if err != nil {
-			logmanager.Error(fmt.Sprintf("Unable to decode payload: ", err.Error()))
+			logmanager.Error(fmt.Sprintf("Unable to decode payload: %v", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0009"))
 			return
 		}
 		var payload Payload
 		err = json.Unmarshal(p, &payload)
 		if err != nil {
-			logmanager.Error(fmt.Sprintf("Unable to parse payload: ", err.Error()))
+			logmanager.Error(fmt.Sprintf("Unable to parse payload: %v", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0011"))
 			return
 		}
@@ -95,7 +95,7 @@ func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 		logmanager.Debug(fmt.Sprintf("sta public certificate set to %s", jwtpubkey))
 
 		if _, err := os.Stat(jwtpubkey); os.IsNotExist(err) {
-			logmanager.Error(fmt.Sprintf("Unable to load sta public certificate: ", err.Error()))
+			logmanager.Error(fmt.Sprintf("Unable to load sta public certificate: %v", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0010"))
 			return
 		}
@@ -103,14 +103,14 @@ func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 		key, _ := ioutil.ReadFile(jwtpubkey)
 		var ecdsaKey *ecdsa.PublicKey
 		if ecdsaKey, err = jwt.ParseECPublicKeyFromPEM(key); err != nil {
-			logmanager.Error(fmt.Sprintf("Unable to parse ECDSA public key: ", err.Error()))
+			logmanager.Error(fmt.Sprintf("Unable to parse ECDSA public key: %v", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0003"))
 		}
 		methode := jwt.GetSigningMethod("ES256")
 		// parts := strings.Split(tokenString, ".")
 		err = methode.Verify(strings.Join(parts[0:2], "."), parts[2], ecdsaKey)
 		if err != nil {
-			logmanager.Error(fmt.Sprintf("Error while verifying key: %s", err.Error()))
+			logmanager.Error(fmt.Sprintf("Error while verifying key: %v", err.Error()))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0004"))
 		}
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
