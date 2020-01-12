@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/ezbastion/ezb_vault/configuration"
 
@@ -49,17 +50,17 @@ type Payload struct {
 func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		logmanager.WithFields("Middleware","jwt")
+		logmanager.WithFields("Middleware", "jwt")
 		var err error
 		authHead := c.GetHeader("Authorization")
 		bearer := strings.Split(authHead, " ")
 		if len(bearer) != 2 {
-			logmanager.Error(fmt.Sprintf("bad Authorization #V0001: authHead:'%s'",authHead))
+			logmanager.Error(fmt.Sprintf("bad Authorization #V0001: authHead:'%s'", authHead))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0001"))
 			return
 		}
 		if strings.Compare(strings.ToLower(bearer[0]), "bearer") != 0 {
-			logmanager.Error(fmt.Sprintf("bad Authorization #V0002: %s",authHead))
+			logmanager.Error(fmt.Sprintf("bad Authorization #V0002: %s", authHead))
 			c.AbortWithError(http.StatusForbidden, errors.New("#V0002"))
 			return
 		}
@@ -86,8 +87,11 @@ func AuthJWT(db *gorm.DB, conf configuration.Configuration) gin.HandlerFunc {
 		jwtkeyfile := fmt.Sprintf("%s.crt", payload.ISS)
 		// change the path to the configuration file
 		// TODO check for cert name itself, in the payload
-		jwtpubkey := path.Join(conf.StaPath, jwtkeyfile)
-		logmanager.Debug(fmt.Sprintf("##### sta public certificate set to %s", conf.StaPath))
+		ex, _ := os.Executable()
+		exPath := filepath.Dir(ex)
+		jwtpubkey := path.Join(exPath, "cert", jwtkeyfile)
+		// jwtpubkey := path.Join(conf.StaPath, jwtkeyfile)
+		// logmanager.Debug(fmt.Sprintf("##### sta public certificate set to %s", conf.StaPath))
 		logmanager.Debug(fmt.Sprintf("sta public certificate set to %s", jwtpubkey))
 
 		if _, err := os.Stat(jwtpubkey); os.IsNotExist(err) {

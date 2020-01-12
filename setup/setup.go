@@ -149,34 +149,36 @@ func Setup(isIntSess bool, firstcall bool) error {
 		}
 
 		// We set the sta path by mandatory to cert
-		conf.StaPath = path.Join(exPath, "cert")
+		// conf.StaPath = path.Join(exPath, "cert")
 		logmanager.Info("********************************", true)
 		logmanager.Info("*** STA public cert settings ***", true)
 		logmanager.Info("********************************", true)
-		logmanager.Debug(fmt.Sprintf("sta public key path set mandatory to %s", conf.StaPath))
-		tpath := conf.StaPath
-		tcert := "ezb_sta.crt"
-		staca := path.Join(tpath, tcert)
-		// conf.StaPath = tpath
-		_, stapub := os.Stat(staca)
-		for {
-			if os.IsNotExist(stapub) {
-				if ez_stdio.AskForConfirmation("STA public cert is not found, do you want to set an alternate path ?") {
-					tpath = ez_stdio.AskForStringValue("ezb_sta public cert path :")
-					tcert = "ezb_sta.crt"
-					staca = path.Join(tpath, tcert)
-					_, stapub = os.Stat(staca)
-				} else {
-					logmanager.Warning(fmt.Sprintf("STA public certificate not found in folder %s, please fix it after setup process", tpath))
-					conf.StaPath = tpath
-					break
-				}
-			} else {
-				conf.StaPath = tpath
-				logmanager.Info(fmt.Sprintf("STA certificate found and set in folder %s", tpath), true)
-				break
-			}
-		}
+		ez_stdio.AskForConfirmation(fmt.Sprintf("Don't forget to copy your STA certificat to %v", path.Join(exPath, "cert")))
+
+		// logmanager.Debug(fmt.Sprintf("sta public key path set mandatory to %s", conf.StaPath))
+		// tpath := conf.StaPath
+		// tcert := "ezb_sta.crt"
+		// staca := path.Join(tpath, tcert)
+		// // conf.StaPath = tpath
+		// _, stapub := os.Stat(staca)
+		// for {
+		// 	if os.IsNotExist(stapub) {
+		// 		if ez_stdio.AskForConfirmation("STA public cert is not found, do you want to set an alternate path ?") {
+		// 			tpath = ez_stdio.AskForStringValue("ezb_sta public cert path :")
+		// 			tcert = "ezb_sta.crt"
+		// 			staca = path.Join(tpath, tcert)
+		// 			_, stapub = os.Stat(staca)
+		// 		} else {
+		// 			logmanager.Warning(fmt.Sprintf("STA public certificate not found in folder %s, please fix it after setup process", tpath))
+		// 			conf.StaPath = tpath
+		// 			break
+		// 		}
+		// 	} else {
+		// 		conf.StaPath = tpath
+		// 		logmanager.Info(fmt.Sprintf("STA certificate found and set in folder %s", tpath), true)
+		// 		break
+		// 	}
+		// }
 
 		c, _ := json.Marshal(conf)
 		ioutil.WriteFile(ConfFile, c, 0600)

@@ -60,7 +60,7 @@ func init() {
 		conf.PublicCert = "cert/ezb_vault.crt"
 		conf.DB = "db/ezb_vault.db"
 		conf.EzbPki = "localhost:6000"
-		conf.StaPath = ""
+		// conf.StaPath = ""
 		conf.JsonToStdout = false
 		conf.ReportCaller = false
 		conf.SAN = []string{_fqdn, hostname}
