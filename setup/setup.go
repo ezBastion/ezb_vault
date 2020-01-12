@@ -81,18 +81,18 @@ func Setup(isIntSess bool, firstcall bool) error {
 	conf, _ := configuration.CheckConfig(true, exPath)
 
 	if firstcall {
-		logmanager.Info("**************************", true)
-		logmanager.Info("** EZB VAULT SETUP MODE **", true)
-		logmanager.Info("**************************", true)
-		logmanager.Info("Entering in the setup mode. Please answer the following requests ", true)
-		logmanager.Info("\n", true)
-		logmanager.Info("********************", true)
-		logmanager.Info("*** PKI settings ***", true)
-		logmanager.Info("********************", true)
-		logmanager.Info("ezBastion nodes use elliptic curve digital signature algorithm ", true)
-		logmanager.Info("(ECDSA) to communicate.", true)
-		logmanager.Info("We need ezb_pki address and port, to request certificat pair.", true)
-		logmanager.Info("ex: 10.20.1.2:6000 pki.domain.local:6000", true)
+		fmt.Println("**************************")
+		fmt.Println("** EZB VAULT SETUP MODE **")
+		fmt.Println("**************************")
+		fmt.Println("Entering in the setup mode. Please answer the following requests ")
+		fmt.Println("\n")
+		fmt.Println("********************")
+		fmt.Println("*** PKI settings ***")
+		fmt.Println("********************")
+		fmt.Println("ezBastion nodes use elliptic curve digital signature algorithm ")
+		fmt.Println("(ECDSA) to communicate.")
+		fmt.Println("We need ezb_pki address and port, to request certificat pair.")
+		fmt.Println("ex: 10.20.1.2:6000 or pki.domain.local:6000")
 
 		for {
 			p := ez_stdio.AskForValue("ezb_pki", conf.EzbPki, `^[a-zA-Z0-9-\.]+:[0-9]{4,5}$`)
@@ -111,12 +111,13 @@ func Setup(isIntSess bool, firstcall bool) error {
 		}
 		_fqdn := fqdn.Get()
 		hostname, _ := os.Hostname()
-		logmanager.Info("********************", true)
-		logmanager.Info("*** SAN settings ***", true)
-		logmanager.Info("********************", true)
-		logmanager.Info("Certificat Subject Alternative Name.", true)
-		logmanager.Info(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
+		fmt.Println("********************")
+		fmt.Println("*** SAN settings ***")
+		fmt.Println("********************")
+		fmt.Println("Certificat Subject Alternative Name.")
+		fmt.Println(fmt.Sprintf("By default using: <%s, %s> as SAN. Add more ?", _fqdn, hostname))
 		for {
+			conf.SAN = []string{_fqdn, hostname}
 			tmp := conf.SAN
 
 			san := ez_stdio.AskForValue("SAN (comma separated list)", strings.Join(conf.SAN, ","), `(?m)^[[:ascii:]]*,?$`)
@@ -150,10 +151,12 @@ func Setup(isIntSess bool, firstcall bool) error {
 
 		// We set the sta path by mandatory to cert
 		// conf.StaPath = path.Join(exPath, "cert")
-		logmanager.Info("********************************", true)
-		logmanager.Info("*** STA public cert settings ***", true)
-		logmanager.Info("********************************", true)
-		ez_stdio.AskForConfirmation(fmt.Sprintf("Don't forget to copy your STA certificat to %v", path.Join(exPath, "cert")))
+		fmt.Println("********************************")
+		fmt.Println("*** STA public cert settings ***")
+		fmt.Println("********************************")
+		fmt.Println(" /!\\ Don't forget to copy your STA certificat to ", path.Join(exPath, "cert"), "/!\\")
+
+		// rewrite this feature in next release !!
 
 		// logmanager.Debug(fmt.Sprintf("sta public key path set mandatory to %s", conf.StaPath))
 		// tpath := conf.StaPath
@@ -182,7 +185,7 @@ func Setup(isIntSess bool, firstcall bool) error {
 
 		c, _ := json.Marshal(conf)
 		ioutil.WriteFile(ConfFile, c, 0600)
-		logmanager.Info(fmt.Sprintf("%s saved", ConfFile))
+		logmanager.Debug(fmt.Sprintf("%s saved", ConfFile))
 	}
 
 	return nil

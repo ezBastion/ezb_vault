@@ -118,7 +118,9 @@ func main() {
 			Usage: "Start ezb_vault in console.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command debug started")
-				configuration.CheckConfig(true, exPath)
+				if firstcall {
+					logmanager.Fatal(fmt.Sprintf("%v not initialized", app.Name))
+				}
 				RunService(conf.ServiceName, true)
 				return nil
 			},
@@ -127,7 +129,9 @@ func main() {
 			Usage: "Add ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command install started")
-				configuration.CheckConfig(true, exPath)
+				if firstcall {
+					logmanager.Fatal(fmt.Sprintf("%v not initialized", app.Name))
+				}
 				return servicemanager.InstallService(conf.ServiceName, conf.ServiceFullName)
 			},
 		}, {
@@ -135,7 +139,9 @@ func main() {
 			Usage: "Remove ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command remove started")
-				configuration.CheckConfig(true, exPath)
+				if firstcall {
+					logmanager.Fatal(fmt.Sprintf("%v not initialized", app.Name))
+				}
 				return servicemanager.RemoveService(conf.ServiceName)
 			},
 		}, {
@@ -143,7 +149,9 @@ func main() {
 			Usage: "Start ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command start started")
-				configuration.CheckConfig(true, exPath)
+				if firstcall {
+					logmanager.Fatal(fmt.Sprintf("%v not initialized", app.Name))
+				}
 				return servicemanager.StartService(conf.ServiceName)
 			},
 		}, {
@@ -151,7 +159,9 @@ func main() {
 			Usage: "Stop ezb_vault deamon windows service.",
 			Action: func(c *cli.Context) error {
 				logmanager.Debug("cli command stop started")
-				configuration.CheckConfig(true, exPath)
+				if firstcall {
+					logmanager.Fatal(fmt.Sprintf("%v not initialized", app.Name))
+				}
 				return servicemanager.ControlService(conf.ServiceName, svc.Stop, svc.Stopped)
 			},
 		},
