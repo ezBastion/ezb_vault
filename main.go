@@ -16,11 +16,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/ezbastion/ezb_lib/logmanager"
@@ -53,7 +50,7 @@ func init() {
 
 	if err != nil {
 		firstcall = true
-		conf.Listen = ":5100"
+		conf.Listen = "localhost:5100"
 		conf.ServiceFullName = "Easy Bastion Vault"
 		conf.ServiceName = "ezb_vault"
 		conf.LogLevel = "debug"
@@ -69,7 +66,7 @@ func init() {
 		conf.SAN = []string{_fqdn, hostname}
 	}
 
-	defaultconflisten = "localhost:5100"
+	defaultconflisten = conf.Listen
 	logmanager.StartWindowsEvent("ezb_vault")
 
 	exe, _ := os.Executable()
@@ -87,12 +84,12 @@ func init() {
 		logmanager.Info("EZB_VAULT started by system command")
 	}
 
-	c, _ := json.Marshal(conf)
-	ConfFile := path.Join(exPath, "conf/config.json")
-	if err := ioutil.WriteFile(ConfFile, c, 0600); err != nil {
-		logmanager.Fatal(err.Error())
-	}
-	logmanager.Info(fmt.Sprintf("%s saved", ConfFile), conf.JsonToStdout)
+	// c, _ := json.Marshal(conf)
+	// ConfFile := path.Join(exPath, "conf/config.json")
+	// if err := ioutil.WriteFile(ConfFile, c, 0600); err != nil {
+	// 	logmanager.Fatal(err.Error())
+	// }
+	// logmanager.Info(fmt.Sprintf("%s saved", ConfFile), conf.JsonToStdout)
 }
 
 func main() {
