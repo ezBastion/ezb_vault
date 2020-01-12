@@ -85,13 +85,6 @@ func init() {
 		// if not in session, set a default log folder
 		logmanager.Info("EZB_VAULT started by system command")
 	}
-
-	// c, _ := json.Marshal(conf)
-	// ConfFile := path.Join(exPath, "conf/config.json")
-	// if err := ioutil.WriteFile(ConfFile, c, 0600); err != nil {
-	// 	logmanager.Fatal(err.Error())
-	// }
-	// logmanager.Info(fmt.Sprintf("%s saved", ConfFile), conf.JsonToStdout)
 }
 
 func main() {
@@ -109,7 +102,7 @@ func main() {
 	// from here, we are in session, handle the commands
 	app := cli.NewApp()
 	app.Name = "ezb_vault"
-	app.Version = "0.1.0-rc1"
+	app.Version = "0.1.1-rc2"
 	app.Usage = "Manage ezBastion key/value vault storage."
 
 	app.Commands = []cli.Command{
