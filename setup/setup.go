@@ -78,7 +78,25 @@ func Setup(isIntSess bool, firstcall bool) error {
 	ex, _ := os.Executable()
 	exPath = filepath.Dir(ex)
 	ConfFile := path.Join(exPath, "conf/config.json")
-	conf, _ := configuration.CheckConfig(true, exPath)
+	conf, err := configuration.CheckConfig(true, exPath)
+	_fqdn := fqdn.Get()
+	hostname, _ := os.Hostname()
+	if err != nil {
+		conf.Listen = "localhost:5100"
+		conf.ServiceFullName = "Easy Bastion Vault"
+		conf.ServiceName = "ezb_vault"
+		conf.LogLevel = "debug"
+		conf.LogPath = ""
+		conf.CaCert = "cert/ca.crt"
+		conf.PrivateKey = "cert/ezb_vault.key"
+		conf.PublicCert = "cert/ezb_vault.crt"
+		conf.DB = "db/ezb_vault.db"
+		conf.EzbPki = "localhost:6000"
+		// conf.StaPath = ""
+		conf.JsonToStdout = false
+		conf.ReportCaller = false
+		conf.SAN = []string{_fqdn, hostname}
+	}
 
 	if firstcall {
 		fmt.Println("**************************")
@@ -145,7 +163,10 @@ func Setup(isIntSess bool, firstcall bool) error {
 			certFile := path.Join(exPath, conf.PublicCert)
 			caFile := path.Join(exPath, conf.CaCert)
 			request := certmanager.NewCertificateRequest(conf.ServiceName, 730, conf.SAN)
-			certmanager.Generate(request, conf.EzbPki, certFile, keyFile, caFile)
+			err = certmanager.Generate(request, conf.EzbPki, certFile, keyFile, caFile)
+			if err != nil {
+				logmanager.Fatal(fmt.Sprintf("generate certificat fatal error:\n%v", err))
+			}
 			logmanager.Debug("Certificate generated")
 		}
 

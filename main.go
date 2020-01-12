@@ -27,8 +27,6 @@ import (
 
 	"github.com/urfave/cli"
 	"golang.org/x/sys/windows/svc"
-
-	fqdn "github.com/ShowMax/go-fqdn"
 )
 
 var logPath string
@@ -42,28 +40,11 @@ func init() {
 	ex, _ := os.Executable()
 	exPath = filepath.Dir(ex)
 	// Loading the conf if exists
-	_fqdn := fqdn.Get()
-	hostname, _ := os.Hostname()
 
-	var err error
 	conf, err = configuration.CheckConfig(true, exPath)
 
 	if err != nil {
 		firstcall = true
-		conf.Listen = "localhost:5100"
-		conf.ServiceFullName = "Easy Bastion Vault"
-		conf.ServiceName = "ezb_vault"
-		conf.LogLevel = "debug"
-		conf.LogPath = ""
-		conf.CaCert = "cert/ca.crt"
-		conf.PrivateKey = "cert/ezb_vault.key"
-		conf.PublicCert = "cert/ezb_vault.crt"
-		conf.DB = "db/ezb_vault.db"
-		conf.EzbPki = "localhost:6000"
-		// conf.StaPath = ""
-		conf.JsonToStdout = false
-		conf.ReportCaller = false
-		conf.SAN = []string{_fqdn, hostname}
 	}
 
 	defaultconflisten = conf.Listen
