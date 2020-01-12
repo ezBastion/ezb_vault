@@ -35,6 +35,7 @@ var logPath string
 var exPath string
 var conf configuration.Configuration
 var firstcall bool
+var isIntSess bool
 
 func init() {
 
@@ -76,7 +77,7 @@ func init() {
 	} else {
 		logPath = conf.LogPath
 	}
-	isIntSess, _ := svc.IsAnInteractiveSession()
+	isIntSess, _ = svc.IsAnInteractiveSession()
 	logmanager.SetLogLevel(conf.LogLevel, logPath, "ezb_vault.log", 1024, 5, 10, isIntSess, conf.ReportCaller, conf.JsonToStdout)
 
 	if !isIntSess {
@@ -93,7 +94,7 @@ func init() {
 }
 
 func main() {
-	isIntSess, _ := svc.IsAnInteractiveSession()
+
 	logmanager.Debug("EZB_VAULT, entering in main process")
 
 	if !isIntSess {
