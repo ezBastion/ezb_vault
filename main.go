@@ -77,7 +77,9 @@ func init() {
 		logPath = conf.LogPath
 	}
 	isIntSess, _ = svc.IsAnInteractiveSession()
-	logmanager.SetLogLevel(conf.LogLevel, logPath, "ezb_vault.log", 1024, 5, 10, isIntSess, conf.ReportCaller, conf.JsonToStdout)
+	if !firstcall {
+		logmanager.SetLogLevel(conf.LogLevel, logPath, "ezb_vault.log", 1024, 5, 10, isIntSess, conf.ReportCaller, conf.JsonToStdout)
+	}
 
 	if !isIntSess {
 		// if not in session, set a default log folder
@@ -93,8 +95,9 @@ func init() {
 }
 
 func main() {
-
-	logmanager.Debug("EZB_VAULT, entering in main process")
+	if !firstcall {
+		logmanager.Debug("EZB_VAULT, entering in main process")
+	}
 
 	if !isIntSess && !firstcall {
 		// if not in session, it is a start request
