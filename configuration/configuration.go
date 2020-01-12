@@ -22,8 +22,6 @@ import (
 	"path"
 )
 
-var ConfFile string
-
 type Configuration struct {
 	Listen          string   `json:"listen"`
 	PrivateKey      string   `json:"privatekey"`
@@ -42,12 +40,16 @@ type Configuration struct {
 }
 
 func CheckConfig(isIntSess bool, exPath string) (conf Configuration, err error) {
-	ConfFile = path.Join(exPath, "conf/config.json")
+	ConfFile := path.Join(exPath, "conf/config.json")
 	raw, err := ioutil.ReadFile(ConfFile)
 	if err != nil {
-		fmt.Println("### error on conffile " + ConfFile)
+		fmt.Println("### error reading conf file " + ConfFile)
 		return conf, err
 	}
-	json.Unmarshal(raw, &conf)
+	err = json.Unmarshal(raw, &conf)
+	if err != nil {
+		fmt.Println("### error Unmarshal json file " + ConfFile)
+		return conf, err
+	}
 	return conf, nil
 }
