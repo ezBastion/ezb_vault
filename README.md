@@ -69,6 +69,10 @@ this commande will create folder and the default config.json file.
     "loglevel": "warning"
 }
 ```
+> /!\ Don't forget to copy all public STA certificat to the cert folder /!\
+> cert name must match jwt ISS value.
+
+
 
 ### 4. Install Windows service and start it.
 

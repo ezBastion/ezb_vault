@@ -23,20 +23,19 @@ import (
 	"os"
 	"os/signal"
 	"path"
-	"time"
 	"path/filepath"
-	
-	log "github.com/sirupsen/logrus"
-	"github.com/ezbastion/ezb_lib/logmanager"
+	"time"
+
 	ezbevent "github.com/ezbastion/ezb_lib/eventlogmanager"
+	"github.com/ezbastion/ezb_lib/logmanager"
 	"github.com/ezbastion/ezb_vault/Middleware"
 	"github.com/ezbastion/ezb_vault/configuration"
 	"github.com/ezbastion/ezb_vault/routes"
 	"github.com/gin-gonic/contrib/ginrus"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
-
 )
 
 var defaultconflisten string
@@ -99,6 +98,10 @@ func MainGin(serverchan *chan bool) {
 	ex, _ := os.Executable()
 	exPath := filepath.Dir(ex)
 	conf, err := configuration.CheckConfig(false, exPath)
+	if err != nil {
+		logmanager.Fatal(fmt.Sprintf("Error during reading Configuration : %s", err.Error()))
+		panic(err)
+	}
 
 	db, err := configuration.InitDB(conf, exPath)
 	if err != nil {

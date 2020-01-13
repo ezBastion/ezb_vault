@@ -82,8 +82,8 @@ func Setup(isIntSess bool, firstcall bool) error {
 	_fqdn := fqdn.Get()
 	hostname, _ := os.Hostname()
 	if err != nil {
-		conf.Listen = "localhost:5100"
-		conf.ServiceFullName = "Easy Bastion Vault"
+		conf.Listen = "0.0.0.0:5100"
+		conf.ServiceFullName = "ezBastion Vault"
 		conf.ServiceName = "ezb_vault"
 		conf.LogLevel = "debug"
 		conf.LogPath = ""
@@ -91,7 +91,7 @@ func Setup(isIntSess bool, firstcall bool) error {
 		conf.PrivateKey = "cert/ezb_vault.key"
 		conf.PublicCert = "cert/ezb_vault.crt"
 		conf.DB = "db/ezb_vault.db"
-		conf.EzbPki = "localhost:6000"
+		conf.EzbPki = "localhost:5010"
 		// conf.StaPath = ""
 		conf.JsonToStdout = false
 		conf.ReportCaller = false
